@@ -5,6 +5,25 @@
 
 #define MAX_LINE_LENGTH 1000
 
+// function to extract the memory address from an operation
+void extract_address(char *line, char *address)
+{
+    while (*line != '(')
+    {
+        line++;
+    }
+    line++;
+
+    while (*line != ')' && *line != ',')
+    {
+        *address = *line;
+        address++;
+        line++;
+    }
+
+    *address = '\0';
+}
+
 void remove_memory_address(char *line)
 {
     regex_t regex;
@@ -20,9 +39,21 @@ void remove_memory_address(char *line)
     // Use regexec to find and replace memory addresses in the line
     if (regexec(&regex, line, 1, &match, 0) == 0)
     {
+        char address[10] = {'\0'};
+        extract_address(line, address);
+
         // Use memmove to replace the matched memory address with "M()"
         memmove(&line[match.rm_so], "M()", strlen("M()"));
         memmove(&line[match.rm_so + strlen("M()")], &line[match.rm_eo], strlen(&line[match.rm_eo]) + 1);
+
+        // concatenate the memory address to the end of the line separeted by a semicolon
+        if (strlen(address) > 0)
+        {
+            line[strlen(line) - 1] = '\0';
+            strcat(line, ";");
+            strcat(line, address);
+            strcat(line, "\n");
+        }
     }
 
     // Free the compiled regular expression
