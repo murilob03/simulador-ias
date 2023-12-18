@@ -16,7 +16,7 @@ operations = [
     "JUMP M(X,0:19)",
     "JUMP M(X,20:39)",
     "JUMP +M(X,0:19)",
-    "JUMP +M(X, 20:39)",
+    "JUMP +M(X,20:39)",
     "ADD M(X)",
     "ADD |M(X)|",
     "SUB M(X)",
