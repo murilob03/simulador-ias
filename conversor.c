@@ -101,7 +101,6 @@ struct operation ops[] = {
     {"STOR M(,8:19)", 0b00010010},
     {"STOR M(,28:39)", 0b00010011},
 };
-
 // function to convert the operation to its decimal representation
 void convert_to_decimal(char *line)
 {
@@ -143,7 +142,7 @@ void convert_to_decimal(char *line)
     address_numeric = atoi(address);
     op_numeric |= address_numeric;
 
-    sprintf(line, "%d", op_numeric);
+    sprintf(line, "%" PRIu32, op_numeric);
 }
 
 // function to join the two operations into a single 64-bit integer
@@ -200,12 +199,13 @@ int main()
             convert_to_decimal(line2);
 
             u_int64_t op_final = join_ops(line1, line2);
-            printf("%" PRIu64 "\n", op_final);
+
+            fprintf(output_file, "%" PRIu64 "\n", op_final);
         }
         else
         {
-            printf(line1);
-            printf(line2);
+            fputs(line1, output_file);
+            fputs(line2, output_file);
         }
         i += 2;
     }
