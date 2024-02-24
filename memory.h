@@ -3,21 +3,13 @@
 
 #include <stdint.h>
 
-#define MEMORY_SIZE 1024
-#define BITS_PER_LINE 40
-
-// Define a structure to represent a memory line
-typedef struct
-{
-    uint8_t data[BITS_PER_LINE / 8];
-} MemoryLine;
-
-
-
-// Function to clear the main memory
-void clear_memory(MemoryLine *memory);
+#define MEMORY_SIZE 4096
+#define BYTES_PER_LINE 5
 
 // Function to write a 40-bit number to a specific memory line (max = 1099511627775)
-void write_to_memory(int line_number, uint64_t data, MemoryLine *memory);
+int memory_write(int n_line, uint64_t data, void *memory);
+
+// Function to read a 40-bit number from a specific memory line
+int memory_read(int n_line, uint64_t *output, void *memory);
 
 #endif
