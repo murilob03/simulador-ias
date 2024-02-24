@@ -3,8 +3,9 @@
 #include <string.h>
 #include <regex.h>
 #include <inttypes.h>
+#include <ctype.h>
 
-#define MAX_LINE_LENGTH 1000
+#define MAX_LINE_LENGTH 100
 
 struct operation
 {
@@ -164,50 +165,81 @@ u_int64_t join_ops(char *line1, char *line2)
     return op_final;
 }
 
-int main()
+int is_operation(char *line)
+{
+    if (isdigit((unsigned char)line[0]))
+    {
+        return 0;
+    }
+    return 1;
+}
+
+int main(int argc, char const *argv[])
 {
     FILE *input_file, *output_file;
-    char line1[MAX_LINE_LENGTH];
-    char line2[MAX_LINE_LENGTH];
+    char line[MAX_LINE_LENGTH];
+    char last_op[MAX_LINE_LENGTH];
 
     // Open input file for reading
-    if ((input_file = fopen("input.txt", "r")) == NULL)
+    if ((input_file = fopen(argv[1], "r")) == NULL)
     {
         perror("Error opening input file");
         exit(EXIT_FAILURE);
     }
 
     // Open output file for writing
-    if ((output_file = fopen("output.txt", "w")) == NULL)
+    if ((output_file = fopen(argv[2], "w")) == NULL)
     {
         perror("Error opening output file");
         fclose(input_file);
         exit(EXIT_FAILURE);
     }
 
-    // Read lines from the input file two by two, remove memory addresses (when necessary), and write to the output file
+    // Read and process lines from the input file
     int i = 0;
-    while (fgets(line1, MAX_LINE_LENGTH, input_file) != NULL)
+    while (fgets(line, MAX_LINE_LENGTH, input_file) != NULL)
     {
-        fgets(line2, MAX_LINE_LENGTH, input_file);
-        if (i > 499)
+        // If the line is an operation, check if there is an operation in the last_op variable
+        if (is_operation(line))
         {
-            remove_memory_address(line1);
-            remove_memory_address(line2);
+            // If there is already an operation in the last_op variable, write both operations to the output file
+            if (last_op[0] != '\0')
+            {
+                remove_memory_address(last_op);
+                remove_memory_address(line);
 
-            convert_to_decimal(line1);
-            convert_to_decimal(line2);
+                convert_to_decimal(last_op);
+                convert_to_decimal(line);
 
-            u_int64_t op_final = join_ops(line1, line2);
+                u_int64_t op_final = join_ops(last_op, line);
 
-            fprintf(output_file, "%" PRIu64 "\n", op_final);
+                fprintf(output_file, "%" PRIu64 "\n", op_final);
+
+                last_op[0] = '\0';
+            }
+            // If there is no operation in the last_op variable, store the current operation in last_op
+            else
+            {
+                strcpy(last_op, line);
+            }
         }
         else
         {
-            fputs(line1, output_file);
-            fputs(line2, output_file);
+            // If the line is not an operation, check if there is an operation in the last_op variable
+            if (last_op[0] != '\0')
+            {
+                remove_memory_address(last_op);
+                convert_to_decimal(last_op);
+                u_int64_t op_final = join_ops(last_op, "0");
+                fprintf(output_file, "%" PRIu64 "\n", strtoul(last_op, NULL, 10));
+                last_op[0] = '\0';
+            }
+
+            // Convert the value in line for a 64-bit integer and write to the output file
+            u_int64_t value = 0;
+            value = strtoull(line, NULL, 10);
+            fprintf(output_file, "%" PRIu64 "\n", value);
         }
-        i += 2;
     }
 
     // Close files

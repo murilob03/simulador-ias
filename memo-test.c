@@ -47,7 +47,7 @@
 
 int main()
 {
-    void *memory = malloc(MEMORY_SIZE * BYTES_PER_LINE);
+    void *memory = memory_init;
 
     // Example usage
     memory_write(0, 12345, memory);         // Write the number 12345 to memory line 0
