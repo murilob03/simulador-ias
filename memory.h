@@ -9,9 +9,9 @@
 #define memory_init malloc(MEMORY_SIZE * BYTES_PER_LINE) 
 
 // Function to write a 40-bit number to a specific memory line (max = 1099511627775)
-int memory_write(int n_line, uint64_t data, void *memory);
+int memory_write(int address, uint64_t data, void *memory);
 
 // Function to read a 40-bit number from a specific memory line
-int memory_read(int n_line, uint64_t *output, void *memory);
+int memory_read(int address, uint64_t *output, void *memory);
 
 #endif
