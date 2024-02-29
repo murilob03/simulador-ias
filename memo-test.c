@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <inttypes.h>
 
 // // Function to print the content of a specific memory line in decimal
 // void print_memory_line_dec(int line_number, MemoryLine *memory)
@@ -52,18 +53,26 @@ int main()
     // Example usage
     memory_write(0, 12345, memory);         // Write the number 12345 to memory line 0
     memory_write(1, 9876543210, memory);    // Write a large number to memory line 1
-    memory_write(2, 1099511627775, memory); // Write the max number to memory line 2
+    memory_write(2, 549755813887, memory);  // Write the max number to memory line 2
+    memory_write(3, -158, memory);          // Write -158 to memory line 3
+    memory_write(4, -1, memory);            // Write -1 to memory line 4
 
     // Print the content of both memory lines
-    uint64_t value = 0;
+    int64_t value = 0;
     memory_read(0, &value, memory);
-    printf("Memory line 0: %lu\n", value);
+    printf("Memory line 0: %" PRId64 "\n", value);
 
     memory_read(1, &value, memory);
-    printf("Memory line 1: %lu\n", value);
+    printf("Memory line 1: %" PRId64 "\n", value);
 
     memory_read(2, &value, memory);
-    printf("Memory line 2: %lu\n", value);
+    printf("Memory line 2: %" PRId64 "\n", value);
+
+    memory_read(3, &value, memory);
+    printf("Memory line 3: %" PRId64 "\n", value);
+
+    memory_read(4, &value, memory);
+    printf("Memory line 4: %" PRId64 "\n", value);
 
     return 0;
 }
