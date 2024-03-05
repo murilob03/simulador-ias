@@ -19,7 +19,7 @@ typedef struct
 typedef struct
 {
     // Fields for IF/ID pipeline register
-    int64_t IR;
+    int64_t MBR;
     int64_t MAR;
 } IF_ID;
 
@@ -62,6 +62,12 @@ typedef struct
     int left_necessary;
     int counter;
 } control_signals;
+
+void busca(IAS_REGS *banco, control_signals *signal, void *memory, IF_ID *if_id);
+void decodifica(IAS_REGS *banco, IF_ID *if_id, ID_OF *id_of, control_signals *signal);
+void busca_operando(IAS_REGS *banco, ID_OF *id_of, OF_EX *of_ex, control_signals *signal, void *memory);
+void executa(IAS_REGS *banco, OF_EX *of_ex, EX_WB *ex_wb, control_signals *signal, int *n_cycles);
+void escreve_resultado(IAS_REGS *banco, EX_WB *ex_wb, void *memory);
 
 void barramento(int is_write, void *memory, IAS_REGS *banco)
 {
@@ -152,19 +158,22 @@ void ULA(int use_mbr, int op, IAS_REGS *banco)
     }
 }
 
-void busca(IAS_REGS *banco, struct aux *signal, void *memory, IF_ID *if_id)
+void busca(IAS_REGS *banco, control_signals *signal, void *memory, IF_ID *if_id)
 {
     // busca
     banco->MAR = banco->PC;
     barramento(0, memory, banco);
 
-    if_id->IR = banco->IR;
+
+    if_id->MBR = banco->MBR;
 
     banco->PC++;
 }
 
 void decodifica(IAS_REGS *banco, IF_ID *if_id, ID_OF *id_of, control_signals *signal)
 {
+    banco->MBR = if_id->MBR;
+
     // decodificação
     if (banco->IBR == 0)
     {
@@ -192,7 +201,7 @@ void decodifica(IAS_REGS *banco, IF_ID *if_id, ID_OF *id_of, control_signals *si
     id_of->opcode = banco->IR;
 }
 
-void busca_operando(IAS_REGS *banco, ID_OF *id_of, OF_EX *of_ex, struct aux *signal, void *memory)
+void busca_operando(IAS_REGS *banco, ID_OF *id_of, OF_EX *of_ex, control_signals *signal, void *memory)
 {
     // busca operando
     banco->MAR = id_of->MAR;
@@ -361,7 +370,7 @@ void processador(void *memory, int *n_cycles)
     p_rgs.of_ex = malloc(sizeof(OF_EX));
     p_rgs.ex_wb = malloc(sizeof(EX_WB));
 
-    p_rgs.if_id->IR = 0;
+    p_rgs.if_id->MBR = 0;
     p_rgs.if_id->MAR = 0;
 
     p_rgs.id_of->opcode = 0;
