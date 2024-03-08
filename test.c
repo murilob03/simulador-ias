@@ -45,25 +45,41 @@ int main(int argc, char const *argv[])
     p_rgs.of_ex = malloc(sizeof(OF_EX));
     p_rgs.ex_wb = malloc(sizeof(EX_WB));
 
-    p_rgs.if_id->MBR = 0;
-    p_rgs.if_id->MAR = 0;
+    p_rgs.if_id->mem_buffer = 0;
+    p_rgs.if_id->mem_addr = 0;
 
     p_rgs.id_of->opcode = 0;
     p_rgs.id_of->enable_of = 0;
-    p_rgs.id_of->MAR = 0;
+    p_rgs.id_of->mem_addr = 0;
 
     p_rgs.of_ex->opcode = 0;
-    p_rgs.of_ex->MAR = 0;
-    p_rgs.of_ex->MBR = 0;
+    p_rgs.of_ex->mem_addr = 0;
+    p_rgs.of_ex->mem_buffer = 0;
 
     p_rgs.ex_wb->enable_wb = 0;
-    p_rgs.ex_wb->MAR = 0;
-    p_rgs.ex_wb->AC = 0;
+    p_rgs.ex_wb->mem_addr = 0;
+    p_rgs.ex_wb->ac = 0;
 
     // Teste de funções
+
+    // busca_operacao
+    printf("***** Teste de busca_operacao *****\n");
+
     banco.PC = 11;
-    busca(&banco, &signal, memory, p_rgs.if_id);
+    busca_operacao(&banco, &signal, memory, p_rgs.if_id);
 
     printf("PC: %d\n", banco.PC);
-    printf("IR: %" PRId64 "\n", p_rgs.if_id->MBR);
+    printf("IR: %" PRId64 "\n", p_rgs.if_id->mem_buffer);
+
+    printf("***** Fim do teste de busca_operacao *****\n\n");
+
+    // decodifica_operacao
+    printf("***** Teste de decodifica_operacao *****\n");
+
+    decodifica(&banco, p_rgs.if_id, p_rgs.id_of, &signal);
+
+    printf("Opcode: %d\n", p_rgs.id_of->opcode);
+    printf("Mem_addr: %d\n", p_rgs.id_of->mem_addr);
+    
+    printf("***** Fim do teste de decodifica_operacao *****\n\n");
 }

@@ -15,36 +15,45 @@ typedef struct
     int64_t MQ;  // multiply-cotient register
 } IAS_REGS;
 
+// Estrutura para os sinais de controle
+typedef struct
+{
+    int left_necessary;
+    int counter;
+    int stall;
+    int restart_pipeline;
+} control_signals;
+
 // Estrutura para o registrador entre IF e ID
 typedef struct
 {
     // Fields for IF/ID pipeline register
-    int64_t MBR;
-    int64_t MAR;
+    int64_t mem_buffer;
+    int64_t mem_addr;
 } IF_ID;
 
 // Estrutura para o registrador entre ID e OF
 typedef struct
 {
-    int opcode;    // The decoded opcode
-    int enable_of; // Enable the OF stage
-    int64_t MAR;   // The address of the operand
+    int opcode;       // The decoded opcode
+    int enable_of;    // Enable the OF stage
+    int64_t mem_addr; // The address of the operand
 } ID_OF;
 
 // Estrutura para o registrador entre OF e EX
 typedef struct
 {
-    int opcode;  // The decoded opcode
-    int64_t MAR; // The address
-    int64_t MBR; // The operand
+    int opcode;         // The decoded opcode
+    int64_t mem_addr;   // The address
+    int64_t mem_buffer; // The operand
 } OF_EX;
 
 // Estrutura para o registrador entre EX e WB
 typedef struct
 {
-    int enable_wb; // Enable the WB stage
-    int64_t MAR;   // The address to write
-    int64_t AC;    // The result of the operation
+    int enable_wb;    // Enable the WB stage
+    int64_t mem_addr; // The address to write
+    int64_t ac;       // The result of the operation
 } EX_WB;
 
 // Estrutura para agrupar os registros do pipeline
@@ -56,14 +65,7 @@ typedef struct
     EX_WB *ex_wb;
 } pipeline_regs;
 
-// Estrutura para os sinais de controle
-typedef struct
-{
-    int left_necessary;
-    int counter;
-} control_signals;
-
-void busca(IAS_REGS *banco, control_signals *signal, void *memory, IF_ID *if_id);
+void busca_operacao(IAS_REGS *banco, control_signals *signal, void *memory, IF_ID *if_id);
 void decodifica(IAS_REGS *banco, IF_ID *if_id, ID_OF *id_of, control_signals *signal);
 void busca_operando(IAS_REGS *banco, ID_OF *id_of, OF_EX *of_ex, control_signals *signal, void *memory);
 void executa(IAS_REGS *banco, OF_EX *of_ex, EX_WB *ex_wb, control_signals *signal, int *n_cycles);
@@ -88,7 +90,7 @@ void UC(IAS_REGS *banco, control_signals *signal, pipeline_regs p_rgs, int *n_cy
     {
     case 0:
         // busca
-        busca(banco, signal, memory, p_rgs.if_id);
+        busca_operacao(banco, signal, memory, p_rgs.if_id);
         break;
     case 1:
         // decodificação
@@ -158,21 +160,20 @@ void ULA(int use_mbr, int op, IAS_REGS *banco)
     }
 }
 
-void busca(IAS_REGS *banco, control_signals *signal, void *memory, IF_ID *if_id)
+void busca_operacao(IAS_REGS *banco, control_signals *signal, void *memory, IF_ID *if_id)
 {
     // busca
     banco->MAR = banco->PC;
     barramento(0, memory, banco);
 
-
-    if_id->MBR = banco->MBR;
+    if_id->mem_buffer = banco->MBR;
 
     banco->PC++;
 }
 
 void decodifica(IAS_REGS *banco, IF_ID *if_id, ID_OF *id_of, control_signals *signal)
 {
-    banco->MBR = if_id->MBR;
+    banco->MBR = if_id->mem_buffer;
 
     // decodificação
     if (banco->IBR == 0)
@@ -197,18 +198,18 @@ void decodifica(IAS_REGS *banco, IF_ID *if_id, ID_OF *id_of, control_signals *si
         banco->IBR = 0;
     }
 
-    id_of->MAR = banco->MAR;
+    id_of->mem_addr = banco->MAR;
     id_of->opcode = banco->IR;
 }
 
 void busca_operando(IAS_REGS *banco, ID_OF *id_of, OF_EX *of_ex, control_signals *signal, void *memory)
 {
     // busca operando
-    banco->MAR = id_of->MAR;
+    banco->MAR = id_of->mem_addr;
     barramento(0, memory, banco);
 
-    of_ex->MBR = banco->MBR;
-    of_ex->MAR = id_of->MAR;
+    of_ex->mem_buffer = banco->MBR;
+    of_ex->mem_addr = id_of->mem_addr;
     of_ex->opcode = id_of->opcode;
 }
 
@@ -218,6 +219,7 @@ void executa(IAS_REGS *banco, OF_EX *of_ex, EX_WB *ex_wb, control_signals *signa
     // conta os ciclos para cada operação
     if (signal->counter > 0)
     {
+        signal->stall = 1;
         signal->counter--;
         return;
     }
@@ -264,16 +266,19 @@ void executa(IAS_REGS *banco, OF_EX *of_ex, EX_WB *ex_wb, control_signals *signa
     case 0b00001101:
         // jump M(X,0:19)
         banco->PC = banco->MBR & 0xFFF;
+        signal->restart_pipeline = 1;
         break;
     case 0b00001110:
         // jump M(X,20:39)
         banco->PC = (banco->MBR >> 20) & 0xFFF;
+        signal->restart_pipeline = 1;
         break;
     case 0b00001111:
         // jump +M(X,0:19)
         if (banco->AC >= 0)
         {
             banco->PC = banco->MBR & 0xFFF;
+            signal->restart_pipeline = 1;
         }
         break;
     case 0b00010000:
@@ -281,6 +286,7 @@ void executa(IAS_REGS *banco, OF_EX *of_ex, EX_WB *ex_wb, control_signals *signa
         if (banco->AC >= 0)
         {
             banco->PC = (banco->MBR >> 20) & 0xFFF;
+            signal->restart_pipeline = 1;
         }
         break;
     case 0b00000101:
@@ -331,8 +337,8 @@ void executa(IAS_REGS *banco, OF_EX *of_ex, EX_WB *ex_wb, control_signals *signa
         break;
     }
 
-    ex_wb->MAR = of_ex->MAR;
-    ex_wb->AC = banco->AC;
+    ex_wb->mem_addr = of_ex->mem_addr;
+    ex_wb->ac = banco->AC;
 }
 
 void escreve_resultado(IAS_REGS *banco, EX_WB *ex_wb, void *memory)
@@ -340,8 +346,8 @@ void escreve_resultado(IAS_REGS *banco, EX_WB *ex_wb, void *memory)
     // escrita resultado
     if (ex_wb->enable_wb)
     {
-        banco->MAR = ex_wb->MAR;
-        banco->MBR = ex_wb->AC;
+        banco->MAR = ex_wb->mem_addr;
+        banco->MBR = ex_wb->ac;
         barramento(1, memory, banco);
     }
 }
@@ -370,20 +376,20 @@ void processador(void *memory, int *n_cycles)
     p_rgs.of_ex = malloc(sizeof(OF_EX));
     p_rgs.ex_wb = malloc(sizeof(EX_WB));
 
-    p_rgs.if_id->MBR = 0;
-    p_rgs.if_id->MAR = 0;
+    p_rgs.if_id->mem_buffer = 0;
+    p_rgs.if_id->mem_addr = 0;
 
     p_rgs.id_of->opcode = 0;
     p_rgs.id_of->enable_of = 0;
-    p_rgs.id_of->MAR = 0;
+    p_rgs.id_of->mem_addr = 0;
 
     p_rgs.of_ex->opcode = 0;
-    p_rgs.of_ex->MAR = 0;
-    p_rgs.of_ex->MBR = 0;
+    p_rgs.of_ex->mem_addr = 0;
+    p_rgs.of_ex->mem_buffer = 0;
 
     p_rgs.ex_wb->enable_wb = 0;
-    p_rgs.ex_wb->MAR = 0;
-    p_rgs.ex_wb->AC = 0;
+    p_rgs.ex_wb->mem_addr = 0;
+    p_rgs.ex_wb->ac = 0;
 
     // Inicializa o ciclo de clock
     int clock = 0;
