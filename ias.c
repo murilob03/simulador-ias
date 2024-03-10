@@ -22,7 +22,8 @@ typedef struct
     int counter;
     int stall;
     int restart_pipeline;
-    int forward;
+    int raw;
+    int halt;
 } control_signals;
 
 // Estrutura para o registrador entre IF e ID
@@ -50,9 +51,8 @@ typedef struct
 // Estrutura para o registrador entre EX e WB
 typedef struct
 {
-    int enable_wb;    // Enable the WB stage
     int64_t mem_addr; // The address to write
-    int64_t ac;       // The result of the operation
+    int64_t result;   // The result of the operation
 } EX_WB;
 
 // Estrutura para agrupar os registros do pipeline
@@ -69,6 +69,9 @@ void decodifica(IAS_REGS *banco, IF_ID *if_id, ID_OF *id_of, control_signals *si
 void busca_operando(IAS_REGS *banco, ID_OF *id_of, OF_EX *of_ex, control_signals *signal, void *memory, int *n_cycles);
 void executa_operacao(IAS_REGS *banco, OF_EX *of_ex, EX_WB *ex_wb, control_signals *signal);
 void escreve_resultado(IAS_REGS *banco, EX_WB *ex_wb, void *memory);
+void start_pipeline(IAS_REGS *banco, control_signals *signal, pipeline_regs *p_rgs, void *memory, int *n_cycles);
+void step_pipeline_reverse(void *memory, IAS_REGS *banco, control_signals *signal, pipeline_regs *p_rgs, int *n_cycles);
+int is_read(int opcode);
 
 void barramento(int is_write, void *memory, IAS_REGS *banco)
 {
@@ -84,7 +87,7 @@ void barramento(int is_write, void *memory, IAS_REGS *banco)
 
 // Unidade de Controle
 void UC(IAS_REGS *banco, control_signals *signal, pipeline_regs p_rgs, int *n_cycles, void *memory, int estagio)
-{
+{   
     // detect pipeline stall
     if (signal->stall && estagio != 3)
         return;
@@ -93,28 +96,62 @@ void UC(IAS_REGS *banco, control_signals *signal, pipeline_regs p_rgs, int *n_cy
     {
     case 0:
         // busca
+        if (signal->halt > 0)
+            break;
+
         busca_operacao(banco, signal, memory, p_rgs.if_id);
         break;
     case 1:
         // decodificação
+        if (signal->halt > 0)
+            break;
+
         decodifica(banco, p_rgs.if_id, p_rgs.id_of, signal);
+
         break;
     case 2:
         // busca operando
-
-        // detect raw hazard
-        if (p_rgs.id_of->mem_addr == p_rgs.ex_wb->mem_addr)
-            signal->forward = 1;
+        if (signal->halt > 0)
+            break;
 
         busca_operando(banco, p_rgs.id_of, p_rgs.of_ex, signal, memory, n_cycles);
         break;
     case 3:
         // execução
         executa_operacao(banco, p_rgs.of_ex, p_rgs.ex_wb, signal);
+
+        if (signal->stall == 0)
+        {
+            if (p_rgs.of_ex->opcode == 0b00010010 || p_rgs.of_ex->opcode == 0b00010011)
+            {
+                if (banco->IBR)
+                {
+                    signal->left_necessary = 1;
+                    banco->PC = banco->PC - 1;
+                }
+                else
+                {
+                    signal->left_necessary = 0;
+                    banco->PC = banco->PC - 2;
+                }
+                UC(banco, signal, p_rgs, n_cycles, memory, 4); // write result
+
+                signal->restart_pipeline = 1;
+            }
+        }
+
         break;
     case 4:
         // escrita resultado
         escreve_resultado(banco, p_rgs.ex_wb, memory);
+
+        // Forwarding
+        if (p_rgs.ex_wb->mem_addr != -1)
+        {
+            if (is_read(p_rgs.of_ex->opcode))
+                p_rgs.of_ex->mem_buffer = p_rgs.ex_wb->result;
+        }
+
         break;
     }
 }
@@ -200,13 +237,14 @@ void decodifica(IAS_REGS *banco, IF_ID *if_id, ID_OF *id_of, control_signals *si
         else
         {
             banco->IR = (banco->MBR >> 12) & 0xFF;
-            banco->MAR = banco->IBR & 0xFFF;
+            banco->MAR = banco->MBR & 0xFFF;
+            banco->IBR = 0;
             signal->left_necessary = 1;
         }
     }
     else
     {
-        banco->IR = banco->IBR >> 12;
+        banco->IR = banco->IBR >> 12 & 0xFF;
         banco->MAR = banco->IBR & 0xFFF;
         banco->IBR = 0;
     }
@@ -218,9 +256,9 @@ void decodifica(IAS_REGS *banco, IF_ID *if_id, ID_OF *id_of, control_signals *si
 void busca_operando(IAS_REGS *banco, ID_OF *id_of, OF_EX *of_ex, control_signals *signal, void *memory, int *n_cycles)
 {
     // busca operando
-    
+
     banco->MAR = id_of->mem_addr;
-    
+
     barramento(0, memory, banco);
 
     of_ex->opcode = id_of->opcode;
@@ -235,12 +273,21 @@ void executa_operacao(IAS_REGS *banco, OF_EX *of_ex, EX_WB *ex_wb, control_signa
 {
     // execução
 
+    // verify halt operation
+    if (of_ex->opcode == -1)
+    {
+        signal->halt = 1;
+        return;
+    }
+
     // se o contador de ciclos for 0, executa a operação
     if (signal->counter == 0)
     {
         banco->IR = of_ex->opcode;
         banco->MBR = of_ex->mem_buffer;
         banco->MAR = of_ex->mem_addr;
+
+        ex_wb->mem_addr = -1;
 
         // executa a operação
         switch (banco->IR)
@@ -255,7 +302,7 @@ void executa_operacao(IAS_REGS *banco, OF_EX *of_ex, EX_WB *ex_wb, control_signa
             break;
         case 0b00100001:
             // stor
-            ex_wb->enable_wb = 1;
+            ex_wb->mem_addr = of_ex->mem_addr;
             break;
         case 0b00000001:
             // load M(X)
@@ -343,26 +390,29 @@ void executa_operacao(IAS_REGS *banco, OF_EX *of_ex, EX_WB *ex_wb, control_signa
             break;
         case 0b00010010:
             // stor M(X,8:19)
-            int64_t mask = ~((int64_t)(0xFFF) << 8);
+            int64_t mask = ~((int64_t)(0xFFF) << 20);
             banco->MBR = (banco->MBR & mask);
-            banco->MBR = banco->MBR | (banco->AC << 8);
+            banco->MBR = banco->MBR | (banco->AC << 20);
 
             ex_wb->mem_addr = of_ex->mem_addr;
-            ex_wb->ac = banco->MBR;
-            ex_wb->enable_wb = 1;
+            ex_wb->result = banco->MBR;
+
+            signal->stall = 0;
             return;
         case 0b00010011:
             // stor M(X,28:39)
+            int64_t mask2 = (int64_t)(0xFFFFFFF) << 12;
+            banco->MBR = (banco->MBR & mask2);
             banco->MBR = banco->MBR | banco->AC;
 
             ex_wb->mem_addr = of_ex->mem_addr;
-            ex_wb->ac = banco->MBR;
-            ex_wb->enable_wb = 1;
+            ex_wb->result = banco->MBR;
+
+            signal->stall = 0;
             return;
         }
 
-        ex_wb->mem_addr = of_ex->mem_addr;
-        ex_wb->ac = banco->AC;
+        ex_wb->result = banco->AC;
         signal->stall = 0;
     }
     else
@@ -375,19 +425,21 @@ void executa_operacao(IAS_REGS *banco, OF_EX *of_ex, EX_WB *ex_wb, control_signa
 void escreve_resultado(IAS_REGS *banco, EX_WB *ex_wb, void *memory)
 {
     // escrita resultado
-    if (ex_wb->enable_wb)
+    if (ex_wb->mem_addr != -1)
     {
         banco->MAR = ex_wb->mem_addr;
-        banco->MBR = ex_wb->ac;
-        barramento(1, memory, banco); 
+        banco->MBR = ex_wb->result;
+        barramento(1, memory, banco);
+
+        ex_wb->mem_addr = -1;
     }
 }
 
-void processador(void *memory, int *n_cycles)
+void processador(int pc, void *memory, int *n_cycles)
 {
     // Inicializa o banco de registradores
     IAS_REGS banco;
-    banco.PC = 0;
+    banco.PC = pc;
     banco.MAR = 0;
     banco.IR = 0;
     banco.IBR = 0;
@@ -397,8 +449,11 @@ void processador(void *memory, int *n_cycles)
 
     // Inicializa os sinais de controle
     control_signals signal;
-    signal.left_necessary = 0;
+    signal.left_necessary = 1;
     signal.counter = 0;
+    signal.stall = 0;
+    signal.restart_pipeline = 1;
+    signal.raw = 0;
 
     // Inicializa os registradores do pipeline
     pipeline_regs p_rgs;
@@ -416,14 +471,30 @@ void processador(void *memory, int *n_cycles)
     p_rgs.of_ex->mem_addr = 0;
     p_rgs.of_ex->mem_buffer = 0;
 
-    p_rgs.ex_wb->enable_wb = 0;
-    p_rgs.ex_wb->mem_addr = 0;
-    p_rgs.ex_wb->ac = 0;
-
-    // Inicializa o ciclo de clock
-    int clock = 0;
+    p_rgs.ex_wb->mem_addr = -1;
+    p_rgs.ex_wb->result = 0;
 
     // Inicia a execução do pipeline
+    start_pipeline(&banco, &signal, &p_rgs, memory, n_cycles);
+
+    // Loop principal
+    while (1)
+    {
+        // Executa um ciclo do pipeline
+        step_pipeline_reverse(memory, &banco, &signal, &p_rgs, n_cycles);
+
+        if (signal.halt)
+            break;
+
+        if (signal.restart_pipeline)
+            start_pipeline(&banco, &signal, &p_rgs, memory, n_cycles);
+    }
+
+    // Libera a memória alocada
+    free(p_rgs.if_id);
+    free(p_rgs.id_of);
+    free(p_rgs.of_ex);
+    free(p_rgs.ex_wb);
 }
 
 void step_pipeline(void *memory, IAS_REGS *banco, control_signals *signal, pipeline_regs *p_rgs, int *n_cycles)
@@ -440,13 +511,17 @@ void step_pipeline_reverse(void *memory, IAS_REGS *banco, control_signals *signa
 {
     // Unidade de Controle
     UC(banco, signal, *p_rgs, n_cycles, memory, 4);
+    
     UC(banco, signal, *p_rgs, n_cycles, memory, 3);
+    if (signal->restart_pipeline)
+        return;
+
     UC(banco, signal, *p_rgs, n_cycles, memory, 2);
     UC(banco, signal, *p_rgs, n_cycles, memory, 1);
     UC(banco, signal, *p_rgs, n_cycles, memory, 0);
 }
 
-void start_pipeline(void *memory, IAS_REGS *banco, control_signals *signal, pipeline_regs *p_rgs, int *n_cycles)
+void start_pipeline(IAS_REGS *banco, control_signals *signal, pipeline_regs *p_rgs, void *memory, int *n_cycles)
 {
     // Zero the pipeline registers
     p_rgs->if_id->mem_buffer = 0;
@@ -458,16 +533,19 @@ void start_pipeline(void *memory, IAS_REGS *banco, control_signals *signal, pipe
     p_rgs->of_ex->mem_addr = 0;
     p_rgs->of_ex->mem_buffer = 0;
 
-    p_rgs->ex_wb->enable_wb = 0;
-    p_rgs->ex_wb->mem_addr = 0;
-    p_rgs->ex_wb->ac = 0;
-    
+    p_rgs->ex_wb->mem_addr = -1;
+    p_rgs->ex_wb->result = 0;
+
+    signal->stall = 0;
+
+    banco->IBR = 0;
+
     // Unidade de Controle
     UC(banco, signal, *p_rgs, n_cycles, memory, 0);
 
     UC(banco, signal, *p_rgs, n_cycles, memory, 1);
     UC(banco, signal, *p_rgs, n_cycles, memory, 0);
-    
+
     UC(banco, signal, *p_rgs, n_cycles, memory, 2);
     UC(banco, signal, *p_rgs, n_cycles, memory, 1);
     UC(banco, signal, *p_rgs, n_cycles, memory, 0);
@@ -478,4 +556,19 @@ void start_pipeline(void *memory, IAS_REGS *banco, control_signals *signal, pipe
     UC(banco, signal, *p_rgs, n_cycles, memory, 0);
 
     signal->restart_pipeline = 0;
+}
+
+int is_read(int opcode)
+{
+    return opcode == 0b00000001 ||
+           opcode == 0b00000010 ||
+           opcode == 0b00000011 ||
+           opcode == 0b00000100 ||
+           opcode == 0b00000101 ||
+           opcode == 0b00000110 ||
+           opcode == 0b00000111 ||
+           opcode == 0b00001000 ||
+           opcode == 0b00001001 ||
+           opcode == 0b00001011 ||
+           opcode == 0b00001100;
 }

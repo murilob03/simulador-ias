@@ -102,6 +102,7 @@ struct operation ops[] = {
     {"RSH", 0b00010101},
     {"STOR M(,8:19)", 0b00010010},
     {"STOR M(,28:39)", 0b00010011},
+    {"HALT", 0b11111111},
 };
 // function to convert the operation to its decimal representation
 void convert_to_decimal(char *line)
@@ -237,6 +238,16 @@ void write_memory(void *memory, char *input_file)
             memory_write(memory_address, value, memory);
             memory_address++;
         }
+    }
+
+    // If there is an operation in the last_op variable, write it to the output file
+    if (last_op[0] != '\0')
+    {
+        remove_memory_address(last_op);
+        convert_to_decimal(last_op);
+        u_int64_t op_final = join_ops(last_op, "0");
+        memory_write(memory_address, op_final, memory);
+        memory_address++;
     }
 
     // Close file

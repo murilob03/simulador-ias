@@ -5,58 +5,65 @@
 #include "../conversor.c"
 #include "../ias.c"
 
+void reset_processor(IAS_REGS *banco, control_signals *signal, pipeline_regs *p_rgs)
+{
+    banco->PC = 0;
+    banco->MAR = 0;
+    banco->IR = 0;
+    banco->IBR = 0;
+    banco->MBR = 0;
+    banco->AC = 0;
+    banco->MQ = 0;
+
+    signal->left_necessary = 1;
+    signal->counter = 0;
+    signal->stall = 0;
+    signal->restart_pipeline = 1;
+    signal->raw = 0;
+
+    p_rgs->if_id->mem_buffer = 0;
+
+    p_rgs->id_of->opcode = 0;
+    p_rgs->id_of->mem_addr = 0;
+
+    p_rgs->of_ex->opcode = 0;
+    p_rgs->of_ex->mem_addr = 0;
+    p_rgs->of_ex->mem_buffer = 0;
+
+    p_rgs->ex_wb->mem_addr = -1;
+    p_rgs->ex_wb->result = 0;
+}
+
 int main(int argc, char const *argv[])
 {
     void *memory = memory_init;
 
-    // Teste de conversor.c
-    char *input_file = "inputs/input.txt";
-
-    write_memory(memory, input_file);
+    write_memory(memory, "/home/murilob/codes/simulador-ias/test/input.txt");
 
     // Print memory
     int64_t value;
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < 50; i++)
     {
         memory_read(i, &value, memory);
         printf("%d: %" PRId64 "\n", i, value);
     }
 
     // Teste de ias.c
-    // Inicializa o banco de registradores
-    IAS_REGS banco;
-    banco.PC = 0;
-    banco.MAR = 0;
-    banco.IR = 0;
-    banco.IBR = 0;
-    banco.MBR = 0;
-    banco.AC = 0;
-    banco.MQ = 0;
 
-    // Inicializa os sinais de controle
-    control_signals signal;
-    signal.left_necessary = 1;
-    signal.counter = 0;
+    // Declaração de variáveis
+    IAS_REGS banco; // Banco de registradores
 
-    // Inicializa os registradores do pipeline
+    control_signals signal; // Sinais de controle
+
+    // Banco de registradores do pipeline
     pipeline_regs p_rgs;
     p_rgs.if_id = malloc(sizeof(IF_ID));
     p_rgs.id_of = malloc(sizeof(ID_OF));
     p_rgs.of_ex = malloc(sizeof(OF_EX));
     p_rgs.ex_wb = malloc(sizeof(EX_WB));
 
-    p_rgs.if_id->mem_buffer = 0;
-
-    p_rgs.id_of->opcode = 0;
-    p_rgs.id_of->mem_addr = 0;
-
-    p_rgs.of_ex->opcode = 0;
-    p_rgs.of_ex->mem_addr = 0;
-    p_rgs.of_ex->mem_buffer = 0;
-
-    p_rgs.ex_wb->enable_wb = 0;
-    p_rgs.ex_wb->mem_addr = 0;
-    p_rgs.ex_wb->ac = 0;
+    // Inicializa as variáveis
+    reset_processor(&banco, &signal, &p_rgs);
 
     // Inicializa a quantidade de ciclos por op
     int op_cycles[33];
@@ -90,7 +97,7 @@ int main(int argc, char const *argv[])
     // ADD M(7) SUB M(5)
     // 0000010100000000011100000110000000000101 (2)
     // 21482201093 (10)
-    banco.PC = 10; 
+    banco.PC = 10;
     busca_operacao(&banco, &signal, memory, p_rgs.if_id);
 
     printf("MBR: %" PRId64 "\n", p_rgs.if_id->mem_buffer); // Expected: 21482201093
@@ -104,7 +111,7 @@ int main(int argc, char const *argv[])
 
     printf("Opcode: %" PRId64 "\n", p_rgs.id_of->opcode);     // Expected: 5
     printf("Mem_addr: %" PRId64 "\n", p_rgs.id_of->mem_addr); // Expected: 7
-    
+
     printf("***** Fim do teste de decodifica_operacao *****\n\n");
 
     // busca_operando
@@ -112,10 +119,10 @@ int main(int argc, char const *argv[])
 
     busca_operando(&banco, p_rgs.id_of, p_rgs.of_ex, &signal, memory, op_cycles);
 
-    printf("Opcode: %d\n", p_rgs.of_ex->opcode);     // Expected: 5
-    printf("Mem_addr: %" PRId64 "\n", p_rgs.of_ex->mem_addr); // Expected: 7
+    printf("Opcode: %d\n", p_rgs.of_ex->opcode);                  // Expected: 5
+    printf("Mem_addr: %" PRId64 "\n", p_rgs.of_ex->mem_addr);     // Expected: 7
     printf("Mem_buffer: %" PRId64 "\n", p_rgs.of_ex->mem_buffer); // Expected: 95589247770
-    printf("Counter: %d\n", signal.counter); // Expected: 1
+    printf("Counter: %d\n", signal.counter);                      // Expected: 1
 
     printf("***** Fim do teste de busca_operando *****\n\n");
 
@@ -125,18 +132,23 @@ int main(int argc, char const *argv[])
     executa_operacao(&banco, p_rgs.of_ex, p_rgs.ex_wb, &signal);
 
     printf("First Cycle\n");
-    printf("Enable_wb: %d\n", p_rgs.ex_wb->enable_wb); // Expected: 0
-    printf("Mem_addr: %d\n", p_rgs.ex_wb->mem_addr); // Expected: 0
-    printf("AC: %" PRId64 "\n", p_rgs.ex_wb->ac); // Expected: 0
-    printf("Counter: %d\n", signal.counter); // Expected: 0
+    printf("Mem_addr: %d\n", p_rgs.ex_wb->mem_addr);   // Expected: -1
+    printf("AC: %" PRId64 "\n", p_rgs.ex_wb->result);  // Expected: 0
+    printf("Counter: %d\n", signal.counter);           // Expected: 1
 
     executa_operacao(&banco, p_rgs.of_ex, p_rgs.ex_wb, &signal);
-    
+
     printf("\nSecond Cycle\n");
-    printf("Enable_wb: %d\n", p_rgs.ex_wb->enable_wb); // Expected: 0
-    printf("Mem_addr: %d\n", p_rgs.ex_wb->mem_addr); // Expected: 7
-    printf("AC: %" PRId64 "\n", p_rgs.ex_wb->ac); // Expected: 95589247770
-    printf("Counter: %d\n", signal.counter); // Expected: 0
+    printf("Mem_addr: %d\n", p_rgs.ex_wb->mem_addr);   // Expected: -1
+    printf("AC: %" PRId64 "\n", p_rgs.ex_wb->result);  // Expected: 0
+    printf("Counter: %d\n", signal.counter);           // Expected: 0
+
+    executa_operacao(&banco, p_rgs.of_ex, p_rgs.ex_wb, &signal);
+
+    printf("\nThird Cycle\n");
+    printf("Mem_addr: %d\n", p_rgs.ex_wb->mem_addr);   // Expected: -1
+    printf("AC: %" PRId64 "\n", p_rgs.ex_wb->result);  // Expected: 95589247770
+    printf("Counter: %d\n", signal.counter);           // Expected: 0
 
     printf("***** Fim do teste de executa_operacao *****\n\n");
 
@@ -150,4 +162,57 @@ int main(int argc, char const *argv[])
     printf("Mem[7]: %" PRId64 "\n", value2); // Expected: 95589247770
 
     printf("***** Fim do teste de escreve_resultado *****\n\n");
+
+
+    // Teste de pipeline
+    printf("***** Teste de pipeline *****\n");
+
+    // Inicializa as variáveis
+    reset_processor(&banco, &signal, &p_rgs);
+
+    // Limpa a memória
+    for (int i = 0; i < 100; i++)
+    {
+        memory_write(i, 0, memory);
+    }
+
+    // Carrega a memória com o novo arquivo
+    write_memory(memory, "/home/murilob/codes/simulador-ias/test/input2.txt");
+
+    // Print memory
+    for (int i = 0; i < 36; i++)
+    {
+        memory_read(i, &value, memory);
+        printf("%d: %" PRId64 "\n", i, value);
+    }
+
+    // Teste de start_pipeline
+    printf("\n***** Teste de start_pipeline *****\n");
+
+    // LOAD M(11) SUB M(12)
+    banco.PC = 14;
+
+    start_pipeline(&banco, &signal, &p_rgs, memory, op_cycles);
+
+    printf("ExOpcode: %d\n", p_rgs.of_ex->opcode); // Expected: 1 (LOAD M(11))
+    printf("Mem_buffer: %" PRId64 "\n", p_rgs.of_ex->mem_buffer); // Expected: 9 (valor de M(11))
+
+    printf("OfOpcode: %d\n", p_rgs.id_of->opcode); // Expected: 6 (SUB M(12))
+    printf("Mem_addr: %" PRId64 "\n", p_rgs.id_of->mem_addr); // Expected: 12
+
+    printf("***** Fim do teste de start_pipeline *****\n\n");
+
+    // Teste de processador
+    printf("***** Teste de processador *****\n");
+
+    processador(14, memory, op_cycles);
+
+    // Print memory
+    for (int i = 0; i < 36; i++)
+    {
+        memory_read(i, &value, memory);
+        printf("%d: %" PRId64 "\n", i, value);
+    }
+
+    printf("***** Fim do teste de processador *****\n\n");
 }
