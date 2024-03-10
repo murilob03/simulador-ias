@@ -1,7 +1,5 @@
-#include "memory.h"
+#include "../include/simulador-ias/memory.h"
 
-#include <stdio.h>
-#include <stdint.h>
 #include <string.h>
 
 int memory_write(int address, int64_t data, void *memory)

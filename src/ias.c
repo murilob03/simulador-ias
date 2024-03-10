@@ -1,68 +1,7 @@
-#include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
-#include "memory.h"
 
-// Estrutura para o banco de registradores
-typedef struct
-{
-    int64_t PC;  // program counter
-    int64_t MAR; // memory address register
-    int64_t IR;  // instruction register
-    int64_t IBR; // instruction buffer register
-    int64_t MBR; // memory buffer register
-    int64_t AC;  // accumulator
-    int64_t MQ;  // multiply-cotient register
-} IAS_REGS;
-
-// Estrutura para os sinais de controle
-typedef struct
-{
-    int left_necessary;
-    int counter;
-    int stall;
-    int restart_pipeline;
-    int raw;
-    int halt;
-} control_signals;
-
-// Estrutura para o registrador entre IF e ID
-typedef struct
-{
-    // Fields for IF/ID pipeline register
-    int64_t mem_buffer;
-} IF_ID;
-
-// Estrutura para o registrador entre ID e OF
-typedef struct
-{
-    int opcode;       // The decoded opcode
-    int64_t mem_addr; // The address of the operand
-} ID_OF;
-
-// Estrutura para o registrador entre OF e EX
-typedef struct
-{
-    int opcode;         // The decoded opcode
-    int64_t mem_addr;   // The address
-    int64_t mem_buffer; // The operand
-} OF_EX;
-
-// Estrutura para o registrador entre EX e WB
-typedef struct
-{
-    int64_t mem_addr; // The address to write
-    int64_t result;   // The result of the operation
-} EX_WB;
-
-// Estrutura para agrupar os registros do pipeline
-typedef struct
-{
-    IF_ID *if_id;
-    ID_OF *id_of;
-    OF_EX *of_ex;
-    EX_WB *ex_wb;
-} pipeline_regs;
+#include "../include/simulador-ias/ias.h"
+#include "../include/simulador-ias/memory.h"
 
 void busca_operacao(IAS_REGS *banco, control_signals *signal, void *memory, IF_ID *if_id);
 void decodifica(IAS_REGS *banco, IF_ID *if_id, ID_OF *id_of, control_signals *signal);

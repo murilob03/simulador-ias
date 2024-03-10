@@ -1,10 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <regex.h>
 #include <inttypes.h>
+#include <string.h>
 #include <ctype.h>
-#include "memory.h"
+
+#include "../include/simulador-ias/conversor.h"
+#include "../include/simulador-ias/memory.h"
 
 #define MAX_LINE_LENGTH 100
 
