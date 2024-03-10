@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <inttypes.h>
+#include <string.h>
 
 #include "../include/simulador-ias/memory.h"
 #include "../include/simulador-ias/conversor.h"
@@ -9,7 +10,8 @@
 int main(int argc, char const *argv[])
 {
     // Check if the correct number of arguments is provided
-    if (argc != 5) {
+    if (argc != 5)
+    {
         printf("Usage: %s -p XXX.ias -i YYY\n", argv[0]);
         return 1;
     }
@@ -58,10 +60,18 @@ int main(int argc, char const *argv[])
         i--;
     }
 
-    // Print the memory
+    // Print the memory and write the output to a file
+    char *output_filename = malloc(strlen(argv[2]) + 5);
+    strcpy(output_filename, argv[2]);
+    strcat(output_filename, ".out");
+    FILE *output = fopen(output_filename, "w");
+
     for (int j = 0; j <= i; j++)
     {
         memory_read(j, &value, memory);
         printf("%d: %" PRId64 "\n", j, value);
+        fprintf(output, "%d: %" PRId64 "\n", j, value);
     }
+
+    fclose(output);
 }

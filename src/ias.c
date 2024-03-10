@@ -12,6 +12,16 @@ void start_pipeline(IAS_REGS *banco, control_signals *signal, pipeline_regs *p_r
 void step_pipeline_reverse(void *memory, IAS_REGS *banco, control_signals *signal, pipeline_regs *p_rgs, int *n_cycles);
 int is_read(int opcode);
 
+/*
+    * Função para acesso da memória
+    * is_write: 1 para escrita, 0 para leitura
+    * memory: ponteiro para a memória
+    * banco: banco de registradores
+    * 
+    * A função acessa a memória no endereço armazenado em MAR
+    * e armazena o valor em MBR ou lê o valor de MBR e armazena
+    * no endereço de memória armazenado em MAR.
+*/
 void barramento(int is_write, void *memory, IAS_REGS *banco)
 {
     if (is_write)
@@ -24,9 +34,18 @@ void barramento(int is_write, void *memory, IAS_REGS *banco)
     }
 }
 
-// Unidade de Controle
+/*
+    * Unidade de Controle
+    *
+    * A função UC é responsável por controlar o fluxo de dados
+    * no pipeline. Ela é chamada em cada estágio do pipeline e
+    * verifica se o estágio atual deve ser executado ou não.
+    * 
+    * A função também é responsável por detectar hazards e
+    * stall no pipeline.
+*/
 void UC(IAS_REGS *banco, control_signals *signal, pipeline_regs p_rgs, int *n_cycles, void *memory, int estagio)
-{   
+{
     // detect pipeline stall
     if (signal->stall && estagio != 3)
         return;
@@ -61,21 +80,27 @@ void UC(IAS_REGS *banco, control_signals *signal, pipeline_regs p_rgs, int *n_cy
 
         if (signal->stall == 0)
         {
+            // detect RAW hazard (write to address in use by a previous instruction)
             if (p_rgs.of_ex->opcode == 0b00010010 || p_rgs.of_ex->opcode == 0b00010011)
             {
-                if (banco->IBR)
+                // if the address was already read by next instructions, restart the pipeline
+                if (p_rgs.of_ex->mem_addr > banco->PC - 3 && p_rgs.of_ex->mem_addr < banco->PC + 1)
                 {
-                    signal->left_necessary = 1;
-                    banco->PC = banco->PC - 1;
-                }
-                else
-                {
-                    signal->left_necessary = 0;
-                    banco->PC = banco->PC - 2;
-                }
-                UC(banco, signal, p_rgs, n_cycles, memory, 4); // write result
+                    // verify if next instructions is left or right
+                    if (banco->IBR)
+                    {
+                        signal->left_necessary = 1;
+                        banco->PC = banco->PC - 1;
+                    }
+                    else
+                    {
+                        signal->left_necessary = 0;
+                        banco->PC = banco->PC - 2;
+                    }
 
-                signal->restart_pipeline = 1;
+                    UC(banco, signal, p_rgs, n_cycles, memory, 4); // write result
+                    signal->restart_pipeline = 1;
+                }
             }
         }
 
@@ -87,7 +112,9 @@ void UC(IAS_REGS *banco, control_signals *signal, pipeline_regs p_rgs, int *n_cy
         // Forwarding
         if (p_rgs.ex_wb->mem_addr != -1)
         {
-            if (is_read(p_rgs.of_ex->opcode))
+            // se a proxima instrução for de leitura e o endereço de memória for o mesmo
+            // da instrução atual, encaminha o valor diretamente para a execução
+            if (is_read(p_rgs.of_ex->opcode) && p_rgs.of_ex->mem_addr == p_rgs.ex_wb->mem_addr)
                 p_rgs.of_ex->mem_buffer = p_rgs.ex_wb->result;
         }
 
@@ -95,7 +122,17 @@ void UC(IAS_REGS *banco, control_signals *signal, pipeline_regs p_rgs, int *n_cy
     }
 }
 
-// Unidade Lógica e Aritmética
+/*
+    * Unidade Lógica e Aritmética (ULA)
+    *
+    * A função ULA é responsável por executar as operações
+    * lógicas e aritméticas. Ela é chamada no estágio de
+    * execução do pipeline.
+    * 
+    * @param use_mbr 1 para usar o valor de MBR, 0 para usar o valor de AC
+    * @param op operação a ser executada
+    * @param banco banco de registradores
+*/
 void ULA(int use_mbr, int op, IAS_REGS *banco)
 {
     switch (op)
@@ -144,6 +181,18 @@ void ULA(int use_mbr, int op, IAS_REGS *banco)
     }
 }
 
+/*
+    * Busca Instrução.
+    *
+    * Caso IBR esteja vazio, busca as próximas instruções
+    * na memória e armazena em if_id->mem_buffer. Caso
+    * contrário, retorna sem fazer nada.
+    * 
+    * @param banco banco de registradores
+    * @param signal sinais de controle
+    * @param memory ponteiro para a memória
+    * @param if_id registrador IF/ID
+*/
 void busca_operacao(IAS_REGS *banco, control_signals *signal, void *memory, IF_ID *if_id)
 {
     // busca
@@ -159,6 +208,17 @@ void busca_operacao(IAS_REGS *banco, control_signals *signal, void *memory, IF_I
     banco->PC++;
 }
 
+/*
+    * Decodificação.
+    *
+    * Decodifica a instrução armazenada em MBR e armazena
+    * o opcode e o endereço de memória em id_of.
+    * 
+    * @param banco banco de registradores
+    * @param if_id registrador IF/ID
+    * @param id_of registrador ID/OF
+    * @param signal sinais de controle
+*/
 void decodifica(IAS_REGS *banco, IF_ID *if_id, ID_OF *id_of, control_signals *signal)
 {
     // decodificação
@@ -192,6 +252,18 @@ void decodifica(IAS_REGS *banco, IF_ID *if_id, ID_OF *id_of, control_signals *si
     id_of->opcode = banco->IR;
 }
 
+/*
+    * Busca Operando.
+    *
+    * Busca o operando na memória e armazena em of_ex->mem_buffer.
+    * 
+    * @param banco banco de registradores
+    * @param id_of registrador ID/OF
+    * @param of_ex registrador OF/EX
+    * @param signal sinais de controle
+    * @param memory ponteiro para a memória
+    * @param n_cycles número de ciclos de cada operação
+*/
 void busca_operando(IAS_REGS *banco, ID_OF *id_of, OF_EX *of_ex, control_signals *signal, void *memory, int *n_cycles)
 {
     // busca operando
@@ -208,6 +280,16 @@ void busca_operando(IAS_REGS *banco, ID_OF *id_of, OF_EX *of_ex, control_signals
     signal->counter = n_cycles[of_ex->opcode] - 1;
 }
 
+/*
+    * Execução.
+    *
+    * Executa a operação armazenada em of_ex->opcode.
+    * 
+    * @param banco banco de registradores
+    * @param of_ex registrador OF/EX
+    * @param ex_wb registrador EX/WB
+    * @param signal sinais de controle
+*/
 void executa_operacao(IAS_REGS *banco, OF_EX *of_ex, EX_WB *ex_wb, control_signals *signal)
 {
     // execução
@@ -361,6 +443,15 @@ void executa_operacao(IAS_REGS *banco, OF_EX *of_ex, EX_WB *ex_wb, control_signa
     }
 }
 
+/*
+    * Escrita Resultado.
+    *
+    * Escreve o resultado da operação na memória.
+    * 
+    * @param banco banco de registradores
+    * @param ex_wb registrador EX/WB
+    * @param memory ponteiro para a memória
+*/
 void escreve_resultado(IAS_REGS *banco, EX_WB *ex_wb, void *memory)
 {
     // escrita resultado
@@ -436,21 +527,12 @@ void processador(int pc, void *memory, int *n_cycles)
     free(p_rgs.ex_wb);
 }
 
-void step_pipeline(void *memory, IAS_REGS *banco, control_signals *signal, pipeline_regs *p_rgs, int *n_cycles)
-{
-    // Unidade de Controle
-    UC(banco, signal, *p_rgs, n_cycles, memory, 0);
-    UC(banco, signal, *p_rgs, n_cycles, memory, 1);
-    UC(banco, signal, *p_rgs, n_cycles, memory, 2);
-    UC(banco, signal, *p_rgs, n_cycles, memory, 3);
-    UC(banco, signal, *p_rgs, n_cycles, memory, 4);
-}
-
+// Executa um ciclo do pipeline em ordem reversa
 void step_pipeline_reverse(void *memory, IAS_REGS *banco, control_signals *signal, pipeline_regs *p_rgs, int *n_cycles)
 {
     // Unidade de Controle
     UC(banco, signal, *p_rgs, n_cycles, memory, 4);
-    
+
     UC(banco, signal, *p_rgs, n_cycles, memory, 3);
     if (signal->restart_pipeline)
         return;
@@ -460,6 +542,7 @@ void step_pipeline_reverse(void *memory, IAS_REGS *banco, control_signals *signa
     UC(banco, signal, *p_rgs, n_cycles, memory, 0);
 }
 
+// Inicia a execução do pipeline
 void start_pipeline(IAS_REGS *banco, control_signals *signal, pipeline_regs *p_rgs, void *memory, int *n_cycles)
 {
     // Zero the pipeline registers
@@ -497,6 +580,7 @@ void start_pipeline(IAS_REGS *banco, control_signals *signal, pipeline_regs *p_r
     signal->restart_pipeline = 0;
 }
 
+// Verifica se a operação é de leitura
 int is_read(int opcode)
 {
     return opcode == 0b00000001 ||
