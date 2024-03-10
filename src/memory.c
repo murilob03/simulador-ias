@@ -45,3 +45,10 @@ int memory_read(int address, int64_t *output, void *memory)
 
     return 0;
 }
+
+void memory_clear(void *memory)
+{
+    // Function to clear the memory
+
+    memset(memory, 0, MEMORY_SIZE * BYTES_PER_LINE);
+}

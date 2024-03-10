@@ -178,7 +178,7 @@ int is_operation(char *line)
     return 1;
 }
 
-void write_memory(void *memory, char *input_file)
+void write_memory(void *memory, const char *input_file)
 {
     FILE *file;
     char line[MAX_LINE_LENGTH];
@@ -286,7 +286,7 @@ void separate_line(char *line, char *operation, int *number)
 }
 
 // function to get the number of cycles for each operation from the input file
-void get_op_cycles(int *cycles, char *input_file)
+void get_op_cycles(int *cycles, const char *input_file)
 {
     FILE *file;
     char line[50];
