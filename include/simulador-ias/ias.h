@@ -65,12 +65,12 @@ typedef struct
 } pipeline_regs;
 
 /*
-    * Function to process the instructions in the memory
-    * 
-    * pc: start position of the program
-    * memory: pointer to the memory
-    * n_cycles: pointer to the number of cycles for each operation
-*/
+ * Função para processar as instruções na memória.
+ *
+ * pc: endereço de início do programa
+ * memory: ponteiro para a memória
+ * n_cycles: ponteiro para o número de ciclos para cada operação
+ */
 void processador(int pc, void *memory, int *n_cycles);
 
 #endif

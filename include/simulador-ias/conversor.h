@@ -1,10 +1,10 @@
 #ifndef CONVERSOR_H
 #define CONVERSOR_H
 
-// Function to convert an ias instruction file to a memory
+// Função para converter um arquivo de instruções ias e escrever na memória
 void write_memory(void *memory, const char *input_file);
 
-// Function to get the number of cycles of each operation
+// Função para obter o número de ciclos de cada operação a partir de um arquivo
 void get_op_cycles(int *op_cycles, const char *input_file);
 
 #endif

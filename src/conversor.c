@@ -10,23 +10,23 @@
 
 #define MAX_LINE_LENGTH 100
 
-struct operation
+    struct operation
 {
-    char *name;
-    int opcode;
+    char *name; // nome
+    int opcode; // código da operação
 };
 
-// function to extract the memory address from an operation
+// função para extrair o endereço de memória de uma operação
 void extract_address(char *line, char *address)
 {
-    // move the pointer to the start of the memory address
+    // move o ponteiro para o início do endereço de memória
     while (*line != '(')
     {
         line++;
     }
     line++;
 
-    // copy the memory address to the address variable
+    // copia o endereço de memória para a variável de endereço
     while (*line != ')' && *line != ',')
     {
         *address = *line;
@@ -34,37 +34,37 @@ void extract_address(char *line, char *address)
         line++;
     }
 
-    // add null terminator to the end of the address variable
+    // adiciona o terminador nulo ao final da variável de endereço
     *address = '\0';
 }
 
-// function to remove memory addresses from inside the operations
-// output format: operation;memory_address;
-// example: STOR M(123) -> STOR M();123;
-// example: LOAD MQ,M(1234,8:19) -> LOAD MQ,M(,8:19);1234;
-// example: LOAD MQ -> LOAD MQ;
+// função para remover endereços de memória das operações
+// formato de saída: operação;endereço_de_memória;
+// exemplo: STOR M(123) -> STOR M();123;
+// exemplo: LOAD MQ,M(1234,8:19) -> LOAD MQ,M(,8:19);1234;
+// exemplo: LOAD MQ -> LOAD MQ;
 void remove_memory_address(char *line)
 {
     regex_t regex;
     regmatch_t match;
 
-    // Compile the regular expression pattern to match memory addresses (M(X))
+    // Compila o padrão de expressão regular para corresponder a endereços de memória (M(X))
     if (regcomp(&regex, "M\\([^)]*\\)", REG_EXTENDED) != 0)
     {
-        fprintf(stderr, "Error compiling regular expression\n");
+        fprintf(stderr, "Erro ao compilar expressão regular\n");
         exit(EXIT_FAILURE);
     }
 
-    // Use regexec to find and replace memory addresses in the line
+    // Usa regexec para encontrar e substituir endereços de memória na linha
     if (regexec(&regex, line, 1, &match, 0) == 0)
     {
         char address[10] = {'\0'};
         extract_address(line, address);
 
-        // Use memmove to replace the matched memory address with "M()"
+        // Usa memmove para substituir o endereço de memória correspondido por "M()"
         memmove(&line[match.rm_so + 2], &line[match.rm_so + 2 + strlen(address)], strlen(&line[match.rm_so + strlen(address)]) + 1);
 
-        // concatenate the memory address to the end of the line separeted by a semicolon
+        // concatena o endereço de memória ao final da linha separado por um ponto e vírgula
         line[strlen(line) - 1] = '\0';
         strcat(line, ";");
         strcat(line, address);
@@ -78,7 +78,7 @@ void remove_memory_address(char *line)
         strcat(line, "\n");
     }
 
-    // Free the compiled regular expression
+    // Libera a expressão regular compilada
     regfree(&regex);
 }
 
@@ -106,10 +106,10 @@ struct operation ops[] = {
     {"STOR M(,28:39)", 0b00010011},
     {"HALT", 0b11111111},
 };
-// function to convert the operation to its decimal representation
+// função para converter a operação para sua representação decimal
 void convert_to_decimal(char *line)
 {
-    // separate the operation and the memory address
+    // separa a operação e o endereço de memória
     char *op;
     op = strtok(line, ";");
     if (op == NULL)
@@ -126,7 +126,7 @@ void convert_to_decimal(char *line)
 
     u_int32_t op_numeric = 0;
 
-    // search for the operation in the ops array
+    // busca a operação no array de ops
     for (int i = 0; i < sizeof(ops) / sizeof(ops[0]); i++)
     {
         if (strcmp(ops[i].name, op) == 0)
@@ -137,11 +137,11 @@ void convert_to_decimal(char *line)
     }
     if (op_numeric == 0)
     {
-        printf("Invalid operation: %s\n", op);
+        printf("Operação inválida: %s\n", op);
         exit(EXIT_FAILURE);
     }
 
-    // convert the memory address to an integer and concatenate it to the operation
+    // converte o endereço de memória para um inteiro e concatena-o à operação
     op_numeric <<= 12;
     int address_numeric = 0;
     address_numeric = atoi(address);
@@ -150,10 +150,10 @@ void convert_to_decimal(char *line)
     sprintf(line, "%" PRIu32, op_numeric);
 }
 
-// function to join the two operations into a single 64-bit integer
+// função para unir as duas operações em um único inteiro de 64 bits
 u_int64_t join_ops(char *line1, char *line2)
 {
-    // convert the operations to unsigned long integers
+    // converte as operações para ulong int
     unsigned long int op1 = 0;
     op1 = strtoul(line1, NULL, 10);
     unsigned long int op2 = 0;
@@ -161,7 +161,7 @@ u_int64_t join_ops(char *line1, char *line2)
 
     u_int64_t op_final = 0;
 
-    // concatenate the two operations into a single 64-bit integer
+    // concatena as duas operações em um único inteiro de 64 bits
     op_final |= op1;
     op_final <<= 20;
     op_final |= op2;
@@ -186,23 +186,24 @@ void write_memory(void *memory, const char *input_file)
     last_op[0] = '\0';
     int memory_address = 0;
 
-    // Open input file for reading
+    // Abre o arquivo de entrada para leitura
     if ((file = fopen(input_file, "r")) == NULL)
     {
-        perror("Error opening input file");
+        perror("Erro ao abrir arquivo de entrada");
         exit(EXIT_FAILURE);
     }
 
-    // Read and process lines from the input file
+    // Lê e processa as linhas do arquivo de entrada 
+
     while (fgets(line, MAX_LINE_LENGTH, file) != NULL)
     {
-        // ignore comments
+        // ignora comentários
         if (line[0] == '/' && line[1] == '/')
         {
             continue;
         }
 
-        // ignore block comments
+        // ignora comentários de bloco
         if (line[0] == '/' && line[1] == '*')
         {
             while (!(strstr(line, "*/")))
@@ -212,10 +213,10 @@ void write_memory(void *memory, const char *input_file)
             continue;
         }
 
-        // If the line is an operation, check if there is an operation in the last_op variable
+        // Se a linha for uma operação, verifica se há uma operação na variável last_op
         if (is_operation(line))
         {
-            // If there is already an operation in the last_op variable, write both operations to the output file
+            // Se já houver uma operação na variável last_op, escreve ambas as operações no arquivo de saída
             if (last_op[0] != '\0')
             {
                 remove_memory_address(last_op);
@@ -231,7 +232,7 @@ void write_memory(void *memory, const char *input_file)
 
                 last_op[0] = '\0';
             }
-            // If there is no operation in the last_op variable, store the current operation in last_op
+            // Se não houver uma operação na variável last_op, armazena a operação atual em last_op
             else
             {
                 strcpy(last_op, line);
@@ -239,7 +240,7 @@ void write_memory(void *memory, const char *input_file)
         }
         else
         {
-            // If the line is not an operation, check if there is an operation in the last_op variable
+            // Se a linha não for uma operação, verifica se há uma operação na variável last_op
             if (last_op[0] != '\0')
             {
                 remove_memory_address(last_op);
@@ -250,7 +251,7 @@ void write_memory(void *memory, const char *input_file)
                 last_op[0] = '\0';
             }
 
-            // Convert the value in line for a 64-bit integer and write to the output file
+            // Converte o valor em linha para um inteiro de 64 bits e escreve no arquivo de saída
             int64_t value = 0;
             value = strtoull(line, NULL, 10);
             memory_write(memory_address, value, memory);
@@ -258,7 +259,7 @@ void write_memory(void *memory, const char *input_file)
         }
     }
 
-    // If there is an operation in the last_op variable, write it to the output file
+    // Se houver uma operação na variável last_op, escreve no arquivo de saída
     if (last_op[0] != '\0')
     {
         remove_memory_address(last_op);
@@ -268,12 +269,12 @@ void write_memory(void *memory, const char *input_file)
         memory_address++;
     }
 
-    // Close file
+    // Fecha o arquivo
     fclose(file);
 }
 
-// function to separate the line into the operation and the number
-// example: "load: 2\n" -> operation = load, number = 2
+// função para separar a linha em operação e número
+// exemplo: "load: 2\n" -> operation = load, number = 2
 void separate_line(char *line, char *operation, int *number)
 {
     const char delimiters[] = ":\n";
@@ -285,7 +286,7 @@ void separate_line(char *line, char *operation, int *number)
     *number = atoi(token);
 }
 
-// function to get the number of cycles for each operation from the input file
+// função para obter o número de ciclos para cada operação do arquivo de entrada
 void get_op_cycles(int *cycles, const char *input_file)
 {
     FILE *file;
@@ -294,14 +295,14 @@ void get_op_cycles(int *cycles, const char *input_file)
     int number;
     int i = 0;
 
-    // Open input file for reading
+    // Abre o arquivo de entrada para leitura
     if ((file = fopen(input_file, "r")) == NULL)
     {
-        perror("Error opening input file");
+        perror("Erro ao abrir arquivo de entrada");
         exit(EXIT_FAILURE);
     }
 
-    // Read and process lines from the input file
+    // Lê e processa as linhas do arquivo de entrada
     fgets(line, 50, file);
     while (fgets(line, 50, file) && !(strstr(line, "*/")))
     {
@@ -384,6 +385,6 @@ void get_op_cycles(int *cycles, const char *input_file)
         }
     }
 
-    // Close file
+    // Fecha o arquivo
     fclose(file);
 }

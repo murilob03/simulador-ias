@@ -8,13 +8,13 @@
 
 #define memory_init malloc(MEMORY_SIZE *BYTES_PER_LINE)
 
-// Function to write a 40-bit number to a specific memory line (max = 1099511627775)
+// Função para escrever um número de 40 bits em um endereço
 int memory_write(int address, int64_t data, void *memory);
 
-// Function to read a 40-bit number from a specific memory line
+// Função para ler um número de 40 bits a partir de um endereço
 int memory_read(int address, int64_t *output, void *memory);
 
-// Function to clear the memory
+// Função para limpar a memória
 void memory_clear(void *memory);
 
 #endif

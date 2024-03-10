@@ -9,14 +9,14 @@
 
 int main(int argc, char const *argv[])
 {
-    // Check if the correct number of arguments is provided
+    // Verifica se o número correto de argumentos foi fornecido
     if (argc != 5)
     {
-        printf("Usage: %s -p XXX.ias -i YYY\n", argv[0]);
+        printf("Uso: %s -p XXX.ias -i YYY\n", argv[0]);
         return 1;
     }
 
-    // Set default number of cycles for each instruction
+    // Define o número padrão de ciclos para cada instrução
     int op_cycles[34];
     op_cycles[1] = 1;  // LOAD M(X)
     op_cycles[2] = 1;  // LOAD -M(X)
@@ -40,19 +40,19 @@ int main(int argc, char const *argv[])
     op_cycles[21] = 1; // RSH
     op_cycles[33] = 1; // STOR M(X)
 
-    // Get the number of cycles for each instruction
+    // Obtém o número de ciclos para cada instrução
     get_op_cycles(op_cycles, argv[2]);
 
-    // Write the instructions to the memory
+    // Escreve as instruções na memória
     void *memory = memory_init;
     memory_clear(memory);
     write_memory(memory, argv[2]);
 
-    // Process the instructions
+    // Processa as instruções
     processador(atoi(argv[4]), memory, op_cycles);
 
-    // Traverse the memory backwards until the first non-zero value is found
-    int64_t value;
+    // Percorre a memória de trás para frente até encontrar o primeiro valor diferente de zero
+    int64_t value = 0;
     int i = 4095;
     while (value == 0 && i >= 0)
     {
@@ -60,7 +60,7 @@ int main(int argc, char const *argv[])
         i--;
     }
 
-    // Print the memory and write the output to a file
+    // Imprime a memória e escreve a saída em um arquivo
     char *output_filename = malloc(strlen(argv[2]) + 5);
     strcpy(output_filename, argv[2]);
     strcat(output_filename, ".out");

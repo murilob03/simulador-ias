@@ -13,40 +13,36 @@ void step_pipeline_reverse(void *memory, IAS_REGS *banco, control_signals *signa
 int is_read(int opcode);
 
 /*
-    * Função para acesso da memória
-    * is_write: 1 para escrita, 0 para leitura
-    * memory: ponteiro para a memória
-    * banco: banco de registradores
-    * 
-    * A função acessa a memória no endereço armazenado em MAR
-    * e armazena o valor em MBR ou lê o valor de MBR e armazena
-    * no endereço de memória armazenado em MAR.
-*/
+ * Função para acesso da memória
+ * is_write: 1 para escrita, 0 para leitura
+ * memory: ponteiro para a memória
+ * banco: banco de registradores
+ *
+ * A função acessa a memória no endereço armazenado em MAR
+ * e armazena o valor em MBR ou lê o valor de MBR e armazena
+ * no endereço de memória armazenado em MAR.
+ */
 void barramento(int is_write, void *memory, IAS_REGS *banco)
 {
     if (is_write)
-    {
         memory_write(banco->MAR, banco->MBR, memory);
-    }
     else
-    {
         memory_read(banco->MAR, &banco->MBR, memory);
-    }
 }
 
 /*
-    * Unidade de Controle
-    *
-    * A função UC é responsável por controlar o fluxo de dados
-    * no pipeline. Ela é chamada em cada estágio do pipeline e
-    * verifica se o estágio atual deve ser executado ou não.
-    * 
-    * A função também é responsável por detectar hazards e
-    * stall no pipeline.
-*/
+ * Unidade de Controle
+ *
+ * A função UC é responsável por controlar o fluxo de dados
+ * no pipeline. Ela é chamada em cada estágio do pipeline e
+ * verifica se o estágio atual deve ser executado ou não.
+ *
+ * A função também é responsável por detectar hazards e
+ * stall no pipeline.
+ */
 void UC(IAS_REGS *banco, control_signals *signal, pipeline_regs p_rgs, int *n_cycles, void *memory, int estagio)
 {
-    // detect pipeline stall
+    // detecta pipeline stall
     if (signal->stall && estagio != 3)
         return;
 
@@ -80,13 +76,13 @@ void UC(IAS_REGS *banco, control_signals *signal, pipeline_regs p_rgs, int *n_cy
 
         if (signal->stall == 0)
         {
-            // detect RAW hazard (write to address in use by a previous instruction)
+            // detecta hazard RAW (escrita em endereço em uso por uma instrução anterior)
             if (p_rgs.of_ex->opcode == 0b00010010 || p_rgs.of_ex->opcode == 0b00010011)
             {
-                // if the address was already read by next instructions, restart the pipeline
+                // se o endereço já foi lido por instruções subsequentes, reinicia o pipeline
                 if (p_rgs.of_ex->mem_addr > banco->PC - 3 && p_rgs.of_ex->mem_addr < banco->PC + 1)
                 {
-                    // verify if next instructions is left or right
+                    // verifica se as instruções subsequentes são esquerda ou direita
                     if (banco->IBR)
                     {
                         signal->left_necessary = 1;
@@ -98,7 +94,7 @@ void UC(IAS_REGS *banco, control_signals *signal, pipeline_regs p_rgs, int *n_cy
                         banco->PC = banco->PC - 2;
                     }
 
-                    UC(banco, signal, p_rgs, n_cycles, memory, 4); // write result
+                    UC(banco, signal, p_rgs, n_cycles, memory, 4); // escreve o resultado
                     signal->restart_pipeline = 1;
                 }
             }
@@ -106,13 +102,13 @@ void UC(IAS_REGS *banco, control_signals *signal, pipeline_regs p_rgs, int *n_cy
 
         break;
     case 4:
-        // escrita resultado
+        // escreve resultado
         escreve_resultado(banco, p_rgs.ex_wb, memory);
 
-        // Forwarding
+        // Encaminhamento
         if (p_rgs.ex_wb->mem_addr != -1)
         {
-            // se a proxima instrução for de leitura e o endereço de memória for o mesmo
+            // se a próxima instrução for de leitura e o endereço de memória for o mesmo
             // da instrução atual, encaminha o valor diretamente para a execução
             if (is_read(p_rgs.of_ex->opcode) && p_rgs.of_ex->mem_addr == p_rgs.ex_wb->mem_addr)
                 p_rgs.of_ex->mem_buffer = p_rgs.ex_wb->result;
@@ -123,57 +119,57 @@ void UC(IAS_REGS *banco, control_signals *signal, pipeline_regs p_rgs, int *n_cy
 }
 
 /*
-    * Unidade Lógica e Aritmética (ULA)
-    *
-    * A função ULA é responsável por executar as operações
-    * lógicas e aritméticas. Ela é chamada no estágio de
-    * execução do pipeline.
-    * 
-    * @param use_mbr 1 para usar o valor de MBR, 0 para usar o valor de AC
-    * @param op operação a ser executada
-    * @param banco banco de registradores
-*/
+ * Unidade Lógica e Aritmética (ULA)
+ *
+ * A função ULA é responsável por executar as operações
+ * lógicas e aritméticas. Ela é chamada no estágio de
+ * execução do pipeline.
+ *
+ * @param use_mbr 1 para usar o valor de MBR, 0 para usar o valor de AC
+ * @param op operação a ser executada
+ * @param banco banco de registradores
+ */
 void ULA(int use_mbr, int op, IAS_REGS *banco)
 {
     switch (op)
     {
     case 0:
-        // add
+        // soma
         banco->AC += banco->MBR;
         break;
     case 1:
-        // sub
+        // subtração
         banco->AC -= banco->MBR;
         break;
     case 2:
-        // mul
+        // multiplicação
         banco->AC *= banco->MBR;
         break;
     case 3:
-        // div
+        // divisão
         banco->MQ = banco->AC / banco->MBR;
         banco->AC = banco->AC % banco->MBR;
         break;
     case 4:
-        // abs
+        // absoluto
         if (use_mbr)
             banco->MBR = abs(banco->MBR);
         else
             banco->AC = abs(banco->AC);
         break;
     case 5:
-        // neg
+        // negativo
         if (use_mbr)
             banco->MBR = -banco->MBR;
         else
             banco->AC = -banco->AC;
         break;
     case 6:
-        // right shift
+        // deslocamento direita
         banco->AC >>= banco->AC;
         break;
     case 7:
-        // left shift
+        // deslocamento esquerda
         banco->AC <<= banco->AC;
         break;
     default:
@@ -182,17 +178,17 @@ void ULA(int use_mbr, int op, IAS_REGS *banco)
 }
 
 /*
-    * Busca Instrução.
-    *
-    * Caso IBR esteja vazio, busca as próximas instruções
-    * na memória e armazena em if_id->mem_buffer. Caso
-    * contrário, retorna sem fazer nada.
-    * 
-    * @param banco banco de registradores
-    * @param signal sinais de controle
-    * @param memory ponteiro para a memória
-    * @param if_id registrador IF/ID
-*/
+ * Busca Instrução.
+ *
+ * Caso IBR esteja vazio, busca as próximas instruções
+ * na memória e armazena em if_id->mem_buffer. Caso
+ * contrário, retorna sem fazer nada.
+ *
+ * @param banco banco de registradores
+ * @param signal sinais de controle
+ * @param memory ponteiro para a memória
+ * @param if_id registrador IF/ID
+ */
 void busca_operacao(IAS_REGS *banco, control_signals *signal, void *memory, IF_ID *if_id)
 {
     // busca
@@ -209,16 +205,16 @@ void busca_operacao(IAS_REGS *banco, control_signals *signal, void *memory, IF_I
 }
 
 /*
-    * Decodificação.
-    *
-    * Decodifica a instrução armazenada em MBR e armazena
-    * o opcode e o endereço de memória em id_of.
-    * 
-    * @param banco banco de registradores
-    * @param if_id registrador IF/ID
-    * @param id_of registrador ID/OF
-    * @param signal sinais de controle
-*/
+ * Decodificação.
+ *
+ * Decodifica a instrução armazenada em MBR e armazena
+ * o opcode e o endereço de memória em id_of.
+ *
+ * @param banco banco de registradores
+ * @param if_id registrador IF/ID
+ * @param id_of registrador ID/OF
+ * @param signal sinais de controle
+ */
 void decodifica(IAS_REGS *banco, IF_ID *if_id, ID_OF *id_of, control_signals *signal)
 {
     // decodificação
@@ -253,17 +249,17 @@ void decodifica(IAS_REGS *banco, IF_ID *if_id, ID_OF *id_of, control_signals *si
 }
 
 /*
-    * Busca Operando.
-    *
-    * Busca o operando na memória e armazena em of_ex->mem_buffer.
-    * 
-    * @param banco banco de registradores
-    * @param id_of registrador ID/OF
-    * @param of_ex registrador OF/EX
-    * @param signal sinais de controle
-    * @param memory ponteiro para a memória
-    * @param n_cycles número de ciclos de cada operação
-*/
+ * Busca Operando.
+ *
+ * Busca o operando na memória e armazena em of_ex->mem_buffer.
+ *
+ * @param banco banco de registradores
+ * @param id_of registrador ID/OF
+ * @param of_ex registrador OF/EX
+ * @param signal sinais de controle
+ * @param memory ponteiro para a memória
+ * @param n_cycles número de ciclos de cada operação
+ */
 void busca_operando(IAS_REGS *banco, ID_OF *id_of, OF_EX *of_ex, control_signals *signal, void *memory, int *n_cycles)
 {
     // busca operando
@@ -276,25 +272,25 @@ void busca_operando(IAS_REGS *banco, ID_OF *id_of, OF_EX *of_ex, control_signals
     of_ex->mem_addr = id_of->mem_addr;
     of_ex->mem_buffer = banco->MBR;
 
-    // set counter
+    // configura o contador
     signal->counter = n_cycles[of_ex->opcode] - 1;
 }
 
 /*
-    * Execução.
-    *
-    * Executa a operação armazenada em of_ex->opcode.
-    * 
-    * @param banco banco de registradores
-    * @param of_ex registrador OF/EX
-    * @param ex_wb registrador EX/WB
-    * @param signal sinais de controle
-*/
+ * Execução.
+ *
+ * Executa a operação armazenada em of_ex->opcode.
+ *
+ * @param banco banco de registradores
+ * @param of_ex registrador OF/EX
+ * @param ex_wb registrador EX/WB
+ * @param signal sinais de controle
+ */
 void executa_operacao(IAS_REGS *banco, OF_EX *of_ex, EX_WB *ex_wb, control_signals *signal)
 {
     // execução
 
-    // verify halt operation
+    // verifica operação de parada
     if (of_ex->opcode == -1)
     {
         signal->halt = 1;
@@ -314,11 +310,11 @@ void executa_operacao(IAS_REGS *banco, OF_EX *of_ex, EX_WB *ex_wb, control_signa
         switch (banco->IR)
         {
         case 0b00001010:
-            // load mq
+            // carrega mq
             banco->AC = banco->MQ;
             break;
         case 0b00001001:
-            // load mm
+            // carrega mm
             banco->MQ = banco->MBR;
             break;
         case 0b00100001:
@@ -326,38 +322,38 @@ void executa_operacao(IAS_REGS *banco, OF_EX *of_ex, EX_WB *ex_wb, control_signa
             ex_wb->mem_addr = of_ex->mem_addr;
             break;
         case 0b00000001:
-            // load M(X)
+            // carrega M(X)
             banco->AC = banco->MBR;
             break;
         case 0b00000010:
-            // load -M(X)
+            // carrega -M(X)
             banco->AC = banco->MBR;
             ULA(0, 5, banco); // neg
             break;
         case 0b00000011:
-            // load |M(X)|
+            // carrega |M(X)|
             banco->AC = banco->MBR;
             ULA(0, 4, banco); // abs
             break;
         case 0b00000100:
-            // load -|M(X)|
+            // carrega -|M(X)|
             banco->AC = banco->MBR;
             ULA(0, 4, banco); // abs
             ULA(0, 5, banco); // neg
             break;
         case 0b00001101:
-            // jump M(X,0:19)
+            // salto M(X,0:19)
             banco->PC = banco->MAR;
             signal->restart_pipeline = 1;
             return;
         case 0b00001110:
-            // jump M(X,20:39)
+            // salto M(X,20:39)
             banco->PC = banco->MAR;
             signal->left_necessary = 0;
             signal->restart_pipeline = 1;
             return;
         case 0b00001111:
-            // jump +M(X,0:19)
+            // salto +M(X,0:19)
             if (banco->AC >= 0)
             {
                 banco->PC = banco->MAR;
@@ -366,7 +362,7 @@ void executa_operacao(IAS_REGS *banco, OF_EX *of_ex, EX_WB *ex_wb, control_signa
             }
             break;
         case 0b00010000:
-            // jump +M(X,20:39)
+            // salto +M(X,20:39)
             if (banco->AC >= 0)
             {
                 banco->PC = banco->MAR;
@@ -376,42 +372,44 @@ void executa_operacao(IAS_REGS *banco, OF_EX *of_ex, EX_WB *ex_wb, control_signa
             }
             break;
         case 0b00000101:
-            // add M(X)
+            // soma M(X)
             ULA(0, 0, banco); // add
             break;
         case 0b00000111:
-            // add |M(X)|
+            // soma |M(X)|
             ULA(1, 4, banco); // abs
             ULA(0, 0, banco); // add
             break;
         case 0b00000110:
-            // sub M(X)
+            // subtrai M(X)
             ULA(0, 1, banco); // sub
             break;
         case 0b00001000:
-            // sub |M(X)|
+            // subtrai |M(X)|
             ULA(1, 4, banco); // abs
             ULA(0, 1, banco); // sub
             break;
         case 0b00001011:
-            // mul M(X)
+            // multiplica M(X)
             ULA(0, 2, banco); // mul
             break;
         case 0b00001100:
-            // div M(X)
+            // divide M(X)
             ULA(0, 3, banco); // div
             break;
         case 0b00010100:
-            // lsh
+            // desloca esquerda
             ULA(0, 7, banco); // left shift
             break;
         case 0b00010101:
-            // rsh
+            // desloca direita
             ULA(0, 6, banco); // right shift
             break;
         case 0b00010010:
-            // stor M(X,8:19)
-            int64_t mask = ~((int64_t)(0xFFF) << 20);
+            // armazena M(X,8:19)
+            int64_t mask = ~((int64_t)(0xFFF) <<
+
+                             20);
             banco->MBR = (banco->MBR & mask);
             banco->MBR = banco->MBR | (banco->AC << 20);
 
@@ -421,7 +419,7 @@ void executa_operacao(IAS_REGS *banco, OF_EX *of_ex, EX_WB *ex_wb, control_signa
             signal->stall = 0;
             return;
         case 0b00010011:
-            // stor M(X,28:39)
+            // armazena M(X,28:39)
             int64_t mask2 = (int64_t)(0xFFFFFFF) << 12;
             banco->MBR = (banco->MBR & mask2);
             banco->MBR = banco->MBR | banco->AC;
@@ -444,14 +442,14 @@ void executa_operacao(IAS_REGS *banco, OF_EX *of_ex, EX_WB *ex_wb, control_signa
 }
 
 /*
-    * Escrita Resultado.
-    *
-    * Escreve o resultado da operação na memória.
-    * 
-    * @param banco banco de registradores
-    * @param ex_wb registrador EX/WB
-    * @param memory ponteiro para a memória
-*/
+ * Escrita Resultado.
+ *
+ * Escreve o resultado da operação na memória.
+ *
+ * @param banco banco de registradores
+ * @param ex_wb registrador EX/WB
+ * @param memory ponteiro para a memória
+ */
 void escreve_resultado(IAS_REGS *banco, EX_WB *ex_wb, void *memory)
 {
     // escrita resultado
@@ -545,7 +543,7 @@ void step_pipeline_reverse(void *memory, IAS_REGS *banco, control_signals *signa
 // Inicia a execução do pipeline
 void start_pipeline(IAS_REGS *banco, control_signals *signal, pipeline_regs *p_rgs, void *memory, int *n_cycles)
 {
-    // Zero the pipeline registers
+    // Zera os registradores do pipeline
     p_rgs->if_id->mem_buffer = 0;
 
     p_rgs->id_of->opcode = 0;
