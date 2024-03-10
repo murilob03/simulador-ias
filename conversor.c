@@ -194,6 +194,22 @@ void write_memory(void *memory, char *input_file)
     // Read and process lines from the input file
     while (fgets(line, MAX_LINE_LENGTH, file) != NULL)
     {
+        // ignore comments
+        if (line[0] == '/' && line[1] == '/')
+        {
+            continue;
+        }
+
+        // ignore block comments
+        if (line[0] == '/' && line[1] == '*')
+        {
+            while (!(strstr(line, "*/")))
+            {
+                fgets(line, MAX_LINE_LENGTH, file);
+            }
+            continue;
+        }
+
         // If the line is an operation, check if there is an operation in the last_op variable
         if (is_operation(line))
         {
@@ -248,6 +264,122 @@ void write_memory(void *memory, char *input_file)
         u_int64_t op_final = join_ops(last_op, "0");
         memory_write(memory_address, op_final, memory);
         memory_address++;
+    }
+
+    // Close file
+    fclose(file);
+}
+
+// function to separate the line into the operation and the number
+// example: "load: 2\n" -> operation = load, number = 2
+void separate_line(char *line, char *operation, int *number)
+{
+    const char delimiters[] = ":\n";
+
+    char *token = strtok(line, delimiters);
+    strcpy(operation, token);
+
+    token = strtok(NULL, delimiters);
+    *number = atoi(token);
+}
+
+// function to get the number of cycles for each operation from the input file
+void get_op_cycles(int *cycles, char *input_file)
+{
+    FILE *file;
+    char line[50];
+    char operation[20];
+    int number;
+    int i = 0;
+
+    // Open input file for reading
+    if ((file = fopen(input_file, "r")) == NULL)
+    {
+        perror("Error opening input file");
+        exit(EXIT_FAILURE);
+    }
+
+    // Read and process lines from the input file
+    fgets(line, 50, file);
+    while (fgets(line, 50, file) && !(strstr(line, "*/")))
+    {
+        separate_line(line, operation, &number);
+
+        if (strcmp(operation, "load") == 0)
+        {
+            cycles[1] = number;
+        }
+        else if (strcmp(operation, "load-m") == 0)
+        {
+            cycles[2] = number;
+        }
+        else if (strcmp(operation, "load|m") == 0)
+        {
+            cycles[3] = number;
+        }
+        else if (strcmp(operation, "load-|m") == 0)
+        {
+            cycles[4] = number;
+        }
+        else if (strcmp(operation, "addm") == 0)
+        {
+            cycles[5] = number;
+        }
+        else if (strcmp(operation, "subm") == 0)
+        {
+            cycles[6] = number;
+        }
+        else if (strcmp(operation, "add|m") == 0)
+        {
+            cycles[7] = number;
+        }
+        else if (strcmp(operation, "sub|m") == 0)
+        {
+            cycles[8] = number;
+        }
+        else if (strcmp(operation, "loadmm") == 0)
+        {
+            cycles[9] = number;
+        }
+        else if (strcmp(operation, "loadm") == 0)
+        {
+            cycles[10] = number;
+        }
+        else if (strcmp(operation, "mulm") == 0)
+        {
+            cycles[11] = number;
+        }
+        else if (strcmp(operation, "divm") == 0)
+        {
+            cycles[12] = number;
+        }
+        else if (strcmp(operation, "jumpm") == 0)
+        {
+            cycles[13] = number;
+            cycles[14] = number;
+        }
+        else if (strcmp(operation, "jump+m") == 0)
+        {
+            cycles[15] = number;
+            cycles[16] = number;
+        }
+        else if (strcmp(operation, "storm") == 0)
+        {
+            cycles[18] = number;
+            cycles[19] = number;
+        }
+        else if (strcmp(operation, "lsh") == 0)
+        {
+            cycles[20] = number;
+        }
+        else if (strcmp(operation, "rsh") == 0)
+        {
+            cycles[21] = number;
+        }
+        else if (strcmp(operation, "stor") == 0)
+        {
+            cycles[33] = number;
+        }
     }
 
     // Close file

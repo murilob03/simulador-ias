@@ -1,0 +1,80 @@
+/*
+load-m: 4
+addm: 2
+load: 6
+load|m: 2
+load-|m: 7
+loadmm: 3
+loadm: 1
+sub|m: 4
+add|m: 5
+subm: 3
+mulm: 4
+divm: 10
+jumpm: 4
+jump+m: 5
+lsh: 3
+rsh: 2
+stor: 5
+storm: 8
+*/
+5
+8
+12
+17
+6
+9
+23
+45
+60
+10
+1
+10
+0
+0
+LOAD M(12)
+SUB M(11)
+// bla bla bla
+JUMP +M(35,0:19)
+LOAD M(12)
+STOR M(16,28:39)
+LOAD M(1000)
+STOR M(36)
+LOAD M(12)
+// comment
+ADD M(10)
+STOR M(13)
+SUB M(11)
+LOAD MQ,M(40)
+JUMP +M(28,0:19)
+LOAD M(13)
+STOR M(21,28:39)
+LOAD M(1000)
+SUB M(36)
+JUMP +M(26,0:19)
+LOAD M(13)
+STOR M(37)
+STOR M(24,28:39)
+LOAD M(1000)
+STOR M(36)
+JUMP M(26,0:19)
+LOAD M(13)
+ADD M(10)
+STOR M(13)
+JUMP M(19,0:19)
+LOAD M(37)
+STOR M(30,28:39)
+LOAD M(12)
+STOR M(30,8:19)
+// blpoiika
+LOAD M(1000)
+STOR M(1000)
+LOAD M(12)
+STOR M(32,28:39)
+LOAD M(36)
+STOR M(1000)
+LOAD M(12)
+ADD M(10)
+STOR M(12)
+JUMP M(14,0:19)
+HALT

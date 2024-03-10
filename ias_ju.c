@@ -11,10 +11,19 @@ char buffer[TAM_MAX_STR];
 
 int pc = 0;
 int ck = 0;
+int ck2 = 0;
+int ck3 = 0;
 int ibr = 0;
 long long int mar = 0;
+long long int mar2 = 0;
 int ir = 0;
+int ir2 = 0;
+int ir3 = 0;
+int ir4 = 0;
 long long int mbr = 0;
+long long int mbr2 = 0;
+long long int mbr3 = 0;
+long long int mbr4 = 0;
 int ac = 0;
 int mq = 0;
 long long int memoria[tamanho];
@@ -28,8 +37,10 @@ int flag_ini = 0;
 int flag_parar = 0;
 int flag_dir = 0;
 long long int aux_mudanca = 0;
-int imp = 0;
-int flag_pula = 0;
+int flag_pular = 0;
+int flag_pular2 = 0;
+int flag_continua = 0;
+int flag_parar2 = 0; // storm
 
 void tempo_instrucoes(FILE *arq);
 void separar_string_numero(char *entrada, char *string, int *numero);
@@ -59,7 +70,7 @@ int main(int argc, char *argv[])
         memoria[k] = 0;
     }
 
-    for (int i = 1; i < argc; i++)
+    for (int i = 1; i < argc; i++) // parametros de entrada
     {
         if (strcmp(argv[i], arg_p) == 0 && i + 1 < argc)
         {
@@ -70,8 +81,7 @@ int main(int argc, char *argv[])
             end_inicial = argv[i + 1];
         }
     }
-    pc = atoi(end_inicial);
-    printf("end_pc: %d", pc);
+    pc = atoi(end_inicial); // transforma o valor de pc em número
     saida = fopen("saida.ias.out", "w+");
     arq = fopen(nome_entrada, "r");
     if (arq == NULL)
@@ -86,19 +96,15 @@ int main(int argc, char *argv[])
     {
         buffer[inputLength - 1] = '\0';
     }
-    if (strcmp(buffer, "/*") == 0)
+    if (strcmp(buffer, "/*") == 0) // inicio para ler o tempo que cada instrucao permanece na execucao
     {
-        tempo_instrucoes(arq);
+        tempo_instrucoes(arq); // coloca o tempo de cada instrução em um vetor
     }
-    for (int i = 0; i < 21; i++)
-    {
-        printf("\n%i", tempo[i]);
-    }
-    valores_memoria(arq);
-    fclose(arq);
-    printf("pc:%d\n", pc);
+    valores_memoria(arq); // coloca os valores na memoria
+    fclose(arq);          // já utilizou o arq, agora realizara as operação a partir da memória
     processador();
     imprimir_memoria(saida);
+    fclose(saida);
 }
 
 void tempo_instrucoes(FILE *arq)
@@ -119,7 +125,6 @@ void tempo_instrucoes(FILE *arq)
             buffer[inputLength - 1] = '\0';
         }
         separar_string_numero(buffer, string, &numero);
-        printf("\nbuffer atual: %s", buffer);
         if (strcmp(string, "loadm") == 0)
         {
             tempo[0] = numero;
@@ -196,7 +201,6 @@ void tempo_instrucoes(FILE *arq)
             tempo[20] = numero;
         }
     }
-    printf("buffer ultimo: %s", buffer);
 }
 
 void separar_string_numero(char *entrada, char *string, int *numero)
@@ -225,21 +229,17 @@ void valores_memoria(FILE *arq)
         {
             buffer[inputLength - 1] = '\0';
         }
-        printf("\nbuffer atual:%s\n", buffer);
         long long int value;
         char status = custom_strtoll(buffer, &value);
 
         // Se a linha não é um número, para de ler
         if (status == 'E')
         {
-            printf("entrou aqui no break\n");
             break;
         }
         memoria[i] = value;
         i++;
     }
-    int k = i;
-    printf("Começo instrução");
     do
     {
         size_t inputLength = strlen(buffer); // tirar o \n
@@ -252,127 +252,102 @@ void valores_memoria(FILE *arq)
             buffer[j] = tolower(buffer[j]);
         }
         removeEspacos(buffer);
-        printf("buffer:%s", buffer);
         extrairInformacoes(buffer, operacao, &endereco, &esq, &dir);
-        printf("\nInstrucao: %s", operacao);
-        printf("\nEndereco: %i\n", endereco);
         if (strcmp(buffer, "loadmq") == 0)
         {
-            printf("caso 1\n");
             op = 10;
             endereco = 0;
         }
         else if (strcmp(operacao, "loadmq,m(") == 0)
         {
-            printf("caso 2\n");
             op = 9;
         }
 
         else if ((strcmp(operacao, "storm(") == 0 && (esq != 8) && (esq != 28)))
         {
-            printf("caso 3\n");
             op = 33;
         }
         else if (strcmp(operacao, "load-m(") == 0)
         {
-            printf("caso 4\n");
             op = 2;
         }
         else if (strcmp(operacao, "load-|m(") == 0)
         {
-            printf("caso 5\n");
             op = 4;
         }
         else if (strcmp(operacao, "loadm(") == 0)
         {
-            printf("caso 6\n");
             op = 1;
         }
         else if (strcmp(operacao, "load|m(") == 0)
         {
-            printf("caso 7\n");
             op = 3;
         }
         else if ((strcmp(operacao, "jump+m(") == 0 && (esq == 0)))
         {
-            printf("caso 8\n");
             op = 15;
         }
         else if ((strcmp(operacao, "jump+m(") == 0 && (esq == 20)))
         {
-            printf("caso 9\n");
             op = 16;
             esq = 0, dir = 0;
         }
         else if ((strcmp(operacao, "jumpm(") == 0 && (esq == 0)))
         {
-            printf("caso 10\n");
             op = 13;
             esq = 0, dir = 0;
         }
         else if ((strcmp(operacao, "jumpm(") == 0 && (esq == 20)))
         {
-            printf("caso 11\n");
             op = 14;
             esq = 0, dir = 0;
         }
         else if (strcmp(operacao, "addm(") == 0)
         {
-            printf("caso 12\n");
             op = 5;
         }
         else if (strcmp(operacao, "add|m(") == 0)
         {
-            printf("caso 13\n");
             op = 7;
         }
         else if (strcmp(operacao, "subm(") == 0)
         {
-            printf("caso 14\n");
             op = 6;
         }
         else if (strcmp(operacao, "sub|m(") == 0)
         {
-            printf("caso 15\n");
             op = 8;
         }
         else if (strcmp(operacao, "mulm(") == 0)
         {
-            printf("caso 16\n");
             op = 11;
         }
         else if (strcmp(operacao, "divm(") == 0)
         {
-            printf("caso 17\n");
             op = 12;
         }
         else if (strcmp(buffer, "lsh") == 0)
         {
-            printf("caso 18\n");
             op = 20;
             endereco = 0;
         }
         else if (strcmp(buffer, "rsh") == 0)
         {
-            printf("caso 19\n");
             op = 21;
             endereco = 0;
         }
         else if ((((strcmp(operacao, "storm(")) == 0) && (esq == 8)))
         {
-            printf("caso 20\n");
             op = 18;
             esq = 0, dir = 0;
         }
         else if ((((strcmp(operacao, "storm(")) == 0) && (esq == 28)))
         {
-            printf("caso 21\n");
             op = 19;
             esq = 0, dir = 0;
         }
         else if (strcmp(buffer, "exit") == 0)
         {
-            printf("caso 22\n");
             op = 255;
             endereco = 0;
             fseek(arq, 0, SEEK_END);
@@ -381,7 +356,6 @@ void valores_memoria(FILE *arq)
         {
             instrucao1 = op << 12;
             instrucao1 = instrucao1 | endereco;
-            printf("inst1: %d\n", instrucao1);
             instrucao = instrucao1;
             instrucao = instrucao << 20;
             memoria[i] = instrucao;
@@ -390,19 +364,12 @@ void valores_memoria(FILE *arq)
         {
             instrucao2 = op << 12;
             instrucao2 = instrucao2 | endereco;
-            printf("inst2:%d\n", instrucao2);
             instrucao = instrucao | instrucao2;
-            printf("instfinal:%llu\n", instrucao);
             memoria[i] = instrucao;
             i++;
         }
         m++;
     } while (fgets(buffer, TAM_MAX_STR, arq));
-
-    for (int j = 0; j < i; j++)
-    {
-        printf("vetor[%d] = %llu\n", j, memoria[j]);
-    }
 }
 
 void removeEspacos(char *str)
@@ -438,29 +405,31 @@ void processador()
 // busca, decodificação, busca dos operandos, execução e escrita dos resultados.
 void escrita_resultados()
 {
-    printf("escr_Resul\n");
-    if ((ir == 10) || (ir == 1) || (ir == 2) || (ir == 3) || (ir == 4) || (ir == 5) || (ir == 7) || (ir == 6) || (ir == 8) || (ir == 20) || (ir == 21))
+    ir4 = ir3;
+    mbr4 = mbr3;
+
+    if ((ir4 == 10) || (ir4 == 1) || (ir4 == 2) || (ir4 == 3) || (ir4 == 4) || (ir4 == 5) || (ir4 == 7) || (ir4 == 6) || (ir4 == 8) || (ir4 == 20) || (ir4 == 21))
     {
         ac = op2;
     }
-    else if (ir == 9)
+    else if (ir4 == 9)
     {
         mq = op2;
     }
-    else if (ir == 33)
+    else if (ir4 == 33)
     {
-        memoria[mbr] = op2;
+        memoria[mbr4] = op2;
     }
-    else if (ir == 13) // duvida jump incodicional inst 1
+    else if (ir4 == 13)
     {
         pc = op2;
         flag_parar = 0;
-        if (count % 2 != 0) // para decodificação ocorrer certo.
+        if (count % 2 != 0)
         {
             count++;
         }
     }
-    else if (ir == 14) // duvida jump incodicional inst 2
+    else if (ir4 == 14)
     {
         pc = op2;
         flag_parar = 0;
@@ -470,39 +439,48 @@ void escrita_resultados()
             count++;
         }
     }
-    else if (ir == 15) // duvida jump condicional inst1
+    else if (ir4 == 15)
     {
         pc = op2;
         flag_parar = 0;
-        if ((count % 2 != 0) && (flag_pula == 1))
+
+        if (flag_pular == 1)
         {
-            count++;
-            flag_pula = 0;
+            if (count % 2 != 0)
+            {
+                count++;
+            }
+            flag_pular = 0;
         }
     }
-    else if (ir == 16) // duvida jump condicional inst2
+    else if (ir4 == 16)
     {
         if (op2 != pc)
         {
             flag_dir = 1;
         }
+        if (flag_pular == 1)
+        {
+            if (count % 2 != 0)
+            {
+                count++;
+            }
+            flag_pular = 0;
+        }
         pc = op2;
         flag_parar = 0;
-        if ((count % 2 != 0) && (flag_pula == 1))
-        {
-            count++;
-        }
     }
-    else if (ir == 12)
+    else if (ir4 == 12)
     {
         ac = op3;
         mq = op4;
     }
-    else if ((ir == 18) || (ir == 19)) // duvida mudança end
+    else if ((ir4 == 18) || (ir4 == 19))
     {
         memoria[op1] = aux_mudanca;
+        flag_parar2 = 0;
     }
-    else if (ir == 11)
+    else if (ir4 == 11)
     {
         ac = op2;
         mq = op2;
@@ -511,123 +489,126 @@ void escrita_resultados()
 
 void execucao()
 {
-    printf("Entrou exe\n");
+    ck3 = ck2;
+    ir3 = ir2;
+    mbr3 = mbr2;
+
     int m = 1;
-    while (m <= ck)
+    while (m <= ck3)
     {
-        printf("Entrou aqui na execucao");
-        if (ir == 10)
+
+        if (ir3 == 10)
         {
             op1 = mq;
             ula(1, 0);
         }
-        else if (ir == 9)
+        else if (ir3 == 9)
         {
-            op1 = mbr;
+            op1 = mbr3;
             ula(1, 0);
         }
-        else if (ir == 33)
+        else if (ir3 == 33)
         {
-            printf("IR = 33\n");
+
             op1 = ac;
             ula(1, 0);
         }
-        else if (ir == 1)
+        else if (ir3 == 1)
         {
-            op1 = mbr;
+            op1 = mbr3;
             ula(1, 0);
         }
-        else if (ir == 2)
+        else if (ir3 == 2)
         {
-            printf("IR = 2\n");
-            op1 = -mbr;
+
+            op1 = -mbr3;
             ula(1, 0);
         }
-        else if (ir == 3)
+        else if (ir3 == 3)
         {
-            printf("Entrou no ir = 3\n");
-            op1 = llabs(mbr);
+
+            op1 = llabs(mbr3);
             ula(1, 0);
         }
-        else if (ir == 4)
+        else if (ir3 == 4)
         {
-            op1 = -llabs(mbr);
+            op1 = -llabs(mbr3);
             ula(1, 0);
         }
-        else if (ir == 13) // duvida jump incodicional
+        else if (ir3 == 13)
         {
-            op1 = mbr;
-            ula(1, 0);
+            op1 = mbr3;
+            ula(10, 0);
         }
-        else if (ir == 14) // duvida jump incodicional
+        else if (ir3 == 14)
         {
-            op1 = mbr;
-            ula(1, 0);
+            op1 = mbr3;
+            ula(10, 0);
         }
-        else if (ir == 15) // duvida jump condicional
+        else if (ir3 == 15)
         {
-            op1 = mbr;
+            op1 = mbr3;
             ula(2, 0);
         }
-        else if (ir == 16) // duvida jump condicional
+        else if (ir3 == 16)
         {
-            op1 = mbr;
+            op1 = mbr3;
             ula(2, 0);
         }
-        else if (ir == 5)
+        else if (ir3 == 5)
         {
-            op1 = mbr;
+            op1 = mbr3;
             op2 = ac;
             ula(3, 0);
         }
-        else if (ir == 7)
+        else if (ir3 == 7)
         {
-            op1 = llabs(mbr);
+            op1 = llabs(mbr3);
             op2 = ac;
             ula(3, 0);
         }
-        else if (ir == 6)
+        else if (ir3 == 6)
         {
-            op1 = mbr;
+            op1 = mbr3;
             op2 = ac;
             ula(4, 0);
         }
-        else if (ir == 8)
+        else if (ir3 == 8)
         {
             op1 = llabs(mbr);
             op2 = ac;
             ula(4, 0);
         }
-        else if (ir == 11)
+        else if (ir3 == 11)
         {
-            op1 = mbr;
+            op1 = mbr3;
             op2 = mq;
             ula(5, 0);
         }
-        else if (ir == 12)
+        else if (ir3 == 12)
         {
             op1 = ac;
-            op2 = mbr;
+            op2 = mbr3;
             ula(6, 0);
         }
-        else if (ir == 20)
+        else if (ir3 == 20)
         {
             op1 = ac;
             ula(7, 0);
         }
-        else if (ir == 21)
+        else if (ir3 == 21)
         {
             op1 = ac;
             ula(8, 0);
         }
-        else if (ir == 18) // duvida mudança end
+        else if (ir3 == 18)
         {
-            op1 = mbr;
+            op1 = mbr3;
             ula(9, 1);
         }
-        else if (ir == 19) // duvida mudança end
+        else if (ir3 == 19)
         {
-            op1 = mbr;
+            op1 = mbr3;
             ula(9, 2);
         }
         m++;
@@ -635,19 +616,21 @@ void execucao()
 }
 void busca_operandos()
 {
-    printf("Entrou busc_op\n");
-    if ((ir == 10) || (ir == 9) || (ir == 1) || (ir == 2) || (ir == 3) || (ir == 4) || (ir == 5) || (ir == 7) || (ir == 6) || (ir == 8) || (ir == 11) || (ir == 12) || (ir == 20) || (ir == 21))
+    ck2 = ck;
+    ir2 = ir;
+
+    if ((ir2 == 10) || (ir2 == 9) || (ir2 == 1) || (ir2 == 2) || (ir2 == 3) || (ir2 == 4) || (ir2 == 5) || (ir2 == 7) || (ir2 == 6) || (ir2 == 8) || (ir2 == 11) || (ir2 == 12) || (ir2 == 20) || (ir2 == 21))
     {
-        mbr = memoria[mar];
+        mbr2 = memoria[mar2];
     }
-    else if ((ir == 13) || (ir == 14) || (ir == 15) || (ir == 16) || (ir == 14) || (ir == 18) || (ir == 19) || (ir == 33))
+    else if ((ir2 == 13) || (ir2 == 14) || (ir2 == 15) || (ir2 == 16) || (ir2 == 14) || (ir2 == 18) || (ir2 == 19) || (ir2 == 33))
     {
-        mbr = mar;
+        mbr2 = mar2;
     }
 }
 void decodificacao()
 {
-    printf("Entrou deco\n");
+
     long long int aux;
     long long int masc1 = 0xFFFFF00000; // hexadecimal
     long long int masc2 = 1048575;
@@ -655,67 +638,83 @@ void decodificacao()
     int end = 0;
     int masc_op = 1044480;
     int masc_end = 4095;
-    printf("count:%d\n", count);
-    if ((count % 2 == 0) && (flag_ini != 0)) // se for par quer dizer que é necessário buscar o par de instrucoes na memoria
+
+    if (flag_parar == 1)
     {
-        printf("Entrou deco1\n");
+        ir = 0;
+        mar2 = 0;
+    }
+    else if (flag_parar2 == 1)
+    {
+        ir = 0;
+        mar2 = 0;
+    }
+    else if (flag_pular2 == 1)
+    {
+        ir = 0;
+        mar2 = 0;
+        flag_pular2 = 0;
+    }
+    else if (flag_continua == 1)
+    { // para n decodificar uma instrução desnecessária para continuar as intruções.
+        ir = 0;
+        mar2 = 0;
+        flag_continua = 0;
+    }
+    else if ((count % 2 == 0) && (flag_ini != 0)) // se for par quer dizer que é necessário buscar o par de instrucoes na memoria
+    {
+
         long long int instrucao_1 = 0;
         long long int instrucao_2 = 0;
-        printf("memoria:%llu\n", memoria[pc]);
-        printf("valor mbr:%llu\n", mbr);
         aux = mbr;
-        printf("aux:%llu\n", aux);
         instrucao_1 = aux;
         instrucao_1 = instrucao_1 & masc1;
         instrucao_1 = instrucao_1 >> 20;
-        printf("inst1_depois: %llu\n", instrucao_1);
         instrucao_2 = aux;
         instrucao_2 = instrucao_2 & masc2;
-        printf("inst2_depois:%llu\n", instrucao_2);
+
         if (flag_dir == 0)
         {
             ibr = instrucao_2;
             op = instrucao_1;
             op = op & masc_op;
             op = op >> 12;
-            printf("opcode:%d\n", op);
             end = instrucao_1;
             end = end & masc_end;
-            printf("end:%d\n", end);
         }
         else
         {
             op = instrucao_2;
             op = op & masc_op;
             op = op >> 12;
-            printf("opcode:%d\n", op);
             end = instrucao_2;
             end = end & masc_end;
-            printf("end:%d\n", end);
             flag_dir = 0;
             count++; // para que n entre na parte do ibr
         }
         ir = op;
-        mar = end;
+        mar2 = end;
         count++;
         pc = pc + 1;
     }
-    else if ((count % 2 != 0) && (ir != 0) && (flag_dir == 0))
+    else if ((count % 2 != 0) && (flag_dir == 0))
     { // se for impar, quer dizer que já tem uma instrucao em ibr
         op = ibr;
         op = ibr & masc_op;
         op = op >> 12;
-        printf("opcode:%d\n", op);
         end = ibr;
         end = end & masc_end;
-        printf("end:%d\n", end);
         ir = op;
-        mar = end;
+        mar2 = end;
         count++;
     }
     if ((ir == 13) || (ir == 14) || (ir == 15) || (ir == 16))
     {
         flag_parar = 1;
+    }
+    if ((ir == 18) || (ir == 19))
+    {
+        flag_parar2 = 1;
     }
     if (ir == 10)
     {
@@ -806,9 +805,9 @@ void decodificacao()
 void busca()
 {
     flag_ini = 1;
-    if ((count % 2 == 0) && (flag_parar == 0))
+
+    if ((count % 2 == 0) && (flag_parar == 0) && (flag_parar2 == 0))
     {
-        printf("Entrou busca\n");
         mar = pc;
         barramento();
     }
@@ -816,46 +815,47 @@ void busca()
 
 void barramento()
 {
-    printf("Entrou barramento\n");
     long long int bar_dados = 0;
     long long int bar_end = 0;
     bar_end = mar;
     bar_dados = memoria[mar];
     mbr = bar_dados;
-    printf("mbr_barramento: %llu\n", mbr);
 }
+
 void ula(int sig, int lado)
 {
-    if (sig == 1) // transferencia de dados e salto incondicional
+    if (sig == 1)
     {
         op2 = op1;
     }
     else if (sig == 2)
-    { // salto codicional
+    {
         if (ac >= 0)
         {
             op2 = op1;
-            flag_pula = 1;
+            flag_pular = 1;
+            flag_pular2 = 1;
         }
         else
         {
             op2 = pc;
+            flag_continua = 1;
         }
     }
     else if (sig == 3)
-    { // aritmeticas
+    {
         op2 = op2 + op1;
     }
     else if (sig == 4)
     {
         op2 = op2 - op1;
     }
-    else if (sig == 5) // mul : DUVIDA, como assim colocar bit menos significativo em MQ?
+    else if (sig == 5)
     {
         op2 = op2 * op1;
     }
     else if (sig == 6)
-    { // div
+    {
         op4 = 0;
         op3 = op1;
         while (op3 >= op2)
@@ -865,16 +865,16 @@ void ula(int sig, int lado)
         }
     }
     else if (sig == 7)
-    { // lsh
+    {
         op2 = op1 * 2;
     }
     else if (sig == 8)
-    { // rsh
+    {
         op2 = op1 / 2;
         op3 = op1 % 2;
     }
     else if (sig == 9)
-    { // mudança de endereco esq
+    {
         long long int aux = 0;
         long long int instrucao_1 = 0;
         long long int instrucao_2 = 0;
@@ -888,63 +888,61 @@ void ula(int sig, int lado)
         instrucao_1 = aux;
         instrucao_1 = instrucao_1 & masc1;
         instrucao_1 = instrucao_1 >> 20;
-        printf("inst1_depois: %llu\n", instrucao_1);
+
         instrucao_2 = aux;
         instrucao_2 = instrucao_2 & masc2;
-        printf("inst2_depois:%llu\n", instrucao_2);
+
         if (lado == 1)
-        { // instrucao esq
+        {
             op = instrucao_1;
             op = op & masc_op;
             op = op >> 12;
-            printf("opcode:%d\n", op);
+
             end = ac;
-            printf("end:%d\n", end);
+
             instrucao_1 = op << 12;
             instrucao_1 = instrucao_1 | end;
-            printf("inst1: %d\n", instrucao_1);
-            printf("inst2:%d\n", instrucao_2);
         }
         else if (lado == 2)
-        { // instrucao dir
+        {
             op = instrucao_2;
             op = op & masc_op;
             op = op >> 12;
-            printf("opcode:%d\n", op);
+
             end = ac;
-            printf("end:%d\n", end);
+
             instrucao_2 = op << 12;
             instrucao_2 = instrucao_2 | end;
-            printf("inst1: %d\n", instrucao_1);
-            printf("inst2:%d\n", instrucao_2);
         }
 
         aux_mudanca = instrucao_1;
         aux_mudanca = aux_mudanca << 20;
         aux_mudanca = aux_mudanca | instrucao_2;
-        printf("instfinal:%llu\n", aux_mudanca);
+
+        flag_continua = 1;
+    }
+    else if (sig == 10)
+    {
+        op2 = op1;
+        flag_pular2 = 1;
     }
 }
+
 void uc()
 {
-    while (ir != 255)
+    while (ir4 != 255)
     {
-        printf("pc_while:%d\n", pc);
-        // escrita_resultados();
-        // execucao();
-        // busca_operandos();
-        // decodificacao();
-        busca();
-        decodificacao();
-        busca_operandos();
-        execucao();
         escrita_resultados();
+        execucao();
+        busca_operandos();
+        decodificacao();
+        busca();
     }
 }
 
 void imprimir_memoria(FILE *saida)
 {
-    for (int i = 0; i < 70; i++)
+    for (int i = 0; i < 200; i++) // mudar para 4096
     {
         if (memoria[i] < 0)
         {

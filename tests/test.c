@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <inttypes.h>
 #include "../memory.h"
-#include "../conversor.c"
+#include "../conversor.h"
 #include "../ias.c"
 
 void reset_processor(IAS_REGS *banco, control_signals *signal, pipeline_regs *p_rgs)
@@ -38,7 +38,7 @@ int main(int argc, char const *argv[])
 {
     void *memory = memory_init;
 
-    write_memory(memory, "/home/murilob/codes/simulador-ias/test/input.txt");
+    write_memory(memory, "/home/murilob/codes/simulador-ias/tests/input.txt");
 
     // Print memory
     int64_t value;
@@ -88,6 +88,25 @@ int main(int argc, char const *argv[])
     op_cycles[20] = 2; // LSH
     op_cycles[21] = 2; // RSH
     op_cycles[33] = 2; // STOR M(X)
+
+    // Teste de get_op_cycles
+    printf("***** Teste de get_op_cycles *****\n");
+
+    get_op_cycles(op_cycles, "/home/murilob/codes/simulador-ias/tests/input2.txt");
+
+    // print op_cycles
+    printf("\n");
+    for (int i = 1; i < 17; i++)
+    {
+        printf("op_cycles[%d] = %d\n", i, op_cycles[i]);
+    }
+    for (int i = 18; i < 22; i++)
+    {
+        printf("op_cycles[%d] = %d\n", i, op_cycles[i]);
+    }
+    printf("op_cycles[33] = %d\n", op_cycles[33]);
+
+    printf("***** Fim do teste de get_op_cycles *****\n\n");
 
     // Teste de funções
 
@@ -177,7 +196,7 @@ int main(int argc, char const *argv[])
     }
 
     // Carrega a memória com o novo arquivo
-    write_memory(memory, "/home/murilob/codes/simulador-ias/test/input2.txt");
+    write_memory(memory, "/home/murilob/codes/simulador-ias/tests/input2.txt");
 
     // Print memory
     for (int i = 0; i < 36; i++)
