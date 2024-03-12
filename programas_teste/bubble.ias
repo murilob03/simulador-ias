@@ -1,0 +1,78 @@
+// PC = 23
+// array com 20 elementos
+33
+69
+14
+82
+27
+59
+8
+71
+36
+95
+20
+47
+78
+11
+64
+29
+53
+86
+41
+75
+// n
+19
+// i
+0
+1
+load m(21)
+stor m(25,28:39)
+add m(22)
+stor m(35)
+stor m(26,8:19)
+load m(1000)
+sub m(1000)
+// a[i] > a[i + 1]?
+jump +m(36,0:19)
+// i--
+load m(21)
+add m(22)
+stor m(21)
+load m(20)
+sub m(21)
+sub m(22)
+// fillers por conta de refatoração
+load mq,m(20)
+load mq,m(20)
+// i > n?
+jump +m(23,0:19)
+// n--
+load m(20)
+sub m(22)
+stor m(20)
+sub m(22)
+// n > 0?
+jump +m(44,0:19)
+exit
+// i + 1
+0
+// func para trocar a[i] com a[i + 1]
+load m(21)
+stor m(37,28:39)
+stor m(40,28:39)
+load m(1000)
+stor m(43)
+load m(35)
+stor m(40,8:19)
+stor m(41,28:39)
+load m(1000)
+stor m(1000)
+load m(43)
+stor m(1000)
+jump m(27,0:19)
+// aux
+0
+load m(22)
+sub m(22)
+stor m(21)
+jump m(23,0:19)
