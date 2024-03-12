@@ -134,7 +134,7 @@ void ULA(int use_mbr, int op, IAS_REGS *banco)
     switch (op)
     {
     case 0:
-        // soma
+        // add
         banco->AC += banco->MBR;
         break;
     case 1:
@@ -310,11 +310,11 @@ void executa_operacao(IAS_REGS *banco, OF_EX *of_ex, EX_WB *ex_wb, control_signa
         switch (banco->IR)
         {
         case 0b00001010:
-            // carrega mq
+            // load mq
             banco->AC = banco->MQ;
             break;
         case 0b00001001:
-            // carrega mm
+            // load mm
             banco->MQ = banco->MBR;
             break;
         case 0b00100001:
@@ -322,38 +322,38 @@ void executa_operacao(IAS_REGS *banco, OF_EX *of_ex, EX_WB *ex_wb, control_signa
             ex_wb->mem_addr = of_ex->mem_addr;
             break;
         case 0b00000001:
-            // carrega M(X)
+            // load M(X)
             banco->AC = banco->MBR;
             break;
         case 0b00000010:
-            // carrega -M(X)
+            // load -M(X)
             banco->AC = banco->MBR;
             ULA(0, 5, banco); // neg
             break;
         case 0b00000011:
-            // carrega |M(X)|
+            // load |M(X)|
             banco->AC = banco->MBR;
             ULA(0, 4, banco); // abs
             break;
         case 0b00000100:
-            // carrega -|M(X)|
+            // load -|M(X)|
             banco->AC = banco->MBR;
             ULA(0, 4, banco); // abs
             ULA(0, 5, banco); // neg
             break;
         case 0b00001101:
-            // salto M(X,0:19)
+            // jump M(X,0:19)
             banco->PC = banco->MAR;
             signal->restart_pipeline = 1;
             return;
         case 0b00001110:
-            // salto M(X,20:39)
+            // jump M(X,20:39)
             banco->PC = banco->MAR;
             signal->left_necessary = 0;
             signal->restart_pipeline = 1;
             return;
         case 0b00001111:
-            // salto +M(X,0:19)
+            // jump +M(X,0:19)
             if (banco->AC >= 0)
             {
                 banco->PC = banco->MAR;
@@ -362,7 +362,7 @@ void executa_operacao(IAS_REGS *banco, OF_EX *of_ex, EX_WB *ex_wb, control_signa
             }
             break;
         case 0b00010000:
-            // salto +M(X,20:39)
+            // jump +M(X,20:39)
             if (banco->AC >= 0)
             {
                 banco->PC = banco->MAR;
@@ -372,41 +372,41 @@ void executa_operacao(IAS_REGS *banco, OF_EX *of_ex, EX_WB *ex_wb, control_signa
             }
             break;
         case 0b00000101:
-            // soma M(X)
+            // add M(X)
             ULA(0, 0, banco); // add
             break;
         case 0b00000111:
-            // soma |M(X)|
+            // add |M(X)|
             ULA(1, 4, banco); // abs
             ULA(0, 0, banco); // add
             break;
         case 0b00000110:
-            // subtrai M(X)
+            // sub M(X)
             ULA(0, 1, banco); // sub
             break;
         case 0b00001000:
-            // subtrai |M(X)|
+            // sub |M(X)|
             ULA(1, 4, banco); // abs
             ULA(0, 1, banco); // sub
             break;
         case 0b00001011:
-            // multiplica M(X)
+            // mul M(X)
             ULA(0, 2, banco); // mul
             break;
         case 0b00001100:
-            // divide M(X)
+            // div M(X)
             ULA(0, 3, banco); // div
             break;
         case 0b00010100:
-            // desloca esquerda
+            // lsh
             ULA(0, 7, banco); // left shift
             break;
         case 0b00010101:
-            // desloca direita
+            // rsh
             ULA(0, 6, banco); // right shift
             break;
         case 0b00010010:
-            // armazena M(X,8:19)
+            // stor M(X,8:19)
             int64_t mask = ~((int64_t)(0xFFF) <<
 
                              20);
@@ -419,7 +419,7 @@ void executa_operacao(IAS_REGS *banco, OF_EX *of_ex, EX_WB *ex_wb, control_signa
             signal->stall = 0;
             return;
         case 0b00010011:
-            // armazena M(X,28:39)
+            // stor M(X,28:39)
             int64_t mask2 = (int64_t)(0xFFFFFFF) << 12;
             banco->MBR = (banco->MBR & mask2);
             banco->MBR = banco->MBR | banco->AC;

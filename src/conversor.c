@@ -10,7 +10,7 @@
 
 #define MAX_LINE_LENGTH 100
 
-    struct operation
+struct operation
 {
     char *name; // nome
     int opcode; // código da operação
@@ -49,7 +49,7 @@ void remove_memory_address(char *line)
     regmatch_t match;
 
     // Compila o padrão de expressão regular para corresponder a endereços de memória (M(X))
-    if (regcomp(&regex, "M\\([^)]*\\)", REG_EXTENDED) != 0)
+    if (regcomp(&regex, "m\\([^)]*\\)", REG_EXTENDED) != 0)
     {
         fprintf(stderr, "Erro ao compilar expressão regular\n");
         exit(EXIT_FAILURE);
@@ -83,28 +83,28 @@ void remove_memory_address(char *line)
 }
 
 struct operation ops[] = {
-    {"LOAD MQ", 0b00001010},
-    {"LOAD MQ,M()", 0b00001001},
-    {"STOR M()", 0b00100001},
-    {"LOAD M()", 0b00000001},
-    {"LOAD -M()", 0b00000010},
-    {"LOAD |M()|", 0b00000011},
-    {"LOAD -|M()|", 0b00000100},
-    {"JUMP M(,0:19)", 0b00001101},
-    {"JUMP M(,20:39)", 0b00001110},
-    {"JUMP +M(,0:19)", 0b00001111},
-    {"JUMP +M(,20:39)", 0b00010000},
-    {"ADD M()", 0b00000101},
-    {"ADD |M()|", 0b00000111},
-    {"SUB M()", 0b00000110},
-    {"SUB |M()|", 0b00001000},
-    {"MUL M()", 0b00001011},
-    {"DIV M()", 0b00001100},
-    {"LSH", 0b00010100},
-    {"RSH", 0b00010101},
-    {"STOR M(,8:19)", 0b00010010},
-    {"STOR M(,28:39)", 0b00010011},
-    {"HALT", 0b11111111},
+    {"load mq", 0b00001010},
+    {"load mq,m()", 0b00001001},
+    {"stor m()", 0b00100001},
+    {"load m()", 0b00000001},
+    {"load -m()", 0b00000010},
+    {"load |m()|", 0b00000011},
+    {"load -|m()|", 0b00000100},
+    {"jump m(,0:19)", 0b00001101},
+    {"jump m(,20:39)", 0b00001110},
+    {"jump +m(,0:19)", 0b00001111},
+    {"jump +m(,20:39)", 0b00010000},
+    {"add m()", 0b00000101},
+    {"add |m()|", 0b00000111},
+    {"sub m()", 0b00000110},
+    {"sub |m()|", 0b00001000},
+    {"mul m()", 0b00001011},
+    {"div m()", 0b00001100},
+    {"lsh", 0b00010100},
+    {"rsh", 0b00010101},
+    {"stor m(,8:19)", 0b00010010},
+    {"stor m(,28:39)", 0b00010011},
+    {"exit", 0b11111111}
 };
 // função para converter a operação para sua representação decimal
 void convert_to_decimal(char *line)
@@ -193,7 +193,7 @@ void write_memory(void *memory, const char *input_file)
         exit(EXIT_FAILURE);
     }
 
-    // Lê e processa as linhas do arquivo de entrada 
+    // Lê e processa as linhas do arquivo de entrada
 
     while (fgets(line, MAX_LINE_LENGTH, file) != NULL)
     {
