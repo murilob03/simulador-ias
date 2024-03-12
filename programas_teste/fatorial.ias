@@ -1,13 +1,22 @@
+// valor de n
+5
+0
+1
+// copia n para m(1)
 load m(0)
 stor m(1)
+// n--
 load m(0)
 sub m(2)
 stor m(0)
+// m(1) = m(1) * n
 load mq,m(0)
 mul m(1)
 load mq
 stor m(1)
+// verifica se n > 0
 load m(0)
+sub m(2)
 sub m(2)
 jump +m(4,0:19)
 exit

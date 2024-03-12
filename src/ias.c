@@ -102,9 +102,6 @@ void UC(IAS_REGS *banco, control_signals *signal, pipeline_regs p_rgs, int *n_cy
 
         break;
     case 4:
-        // escreve resultado
-        escreve_resultado(banco, p_rgs.ex_wb, memory);
-
         // Encaminhamento
         if (p_rgs.ex_wb->mem_addr != 255)
         {
@@ -113,6 +110,9 @@ void UC(IAS_REGS *banco, control_signals *signal, pipeline_regs p_rgs, int *n_cy
             if (is_read(p_rgs.of_ex->opcode) && p_rgs.of_ex->mem_addr == p_rgs.ex_wb->mem_addr)
                 p_rgs.of_ex->mem_buffer = p_rgs.ex_wb->result;
         }
+
+        // escreve resultado
+        escreve_resultado(banco, p_rgs.ex_wb, memory);
 
         break;
     }

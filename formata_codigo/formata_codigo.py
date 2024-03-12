@@ -5,7 +5,7 @@ def format_instructions(input_file, output_file):
         lines = f.readlines()
     
     instructions = [line.replace('\t', '\n') for line in lines]
-    formatted_instructions = [instruction.upper() for instruction in instructions]
+    formatted_instructions = [instruction.lower() for instruction in instructions]
     
 
     with open(output_file, 'w') as f:

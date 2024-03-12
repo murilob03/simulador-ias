@@ -104,8 +104,8 @@ struct operation ops[] = {
     {"rsh", 0b00010101},
     {"stor m(,8:19)", 0b00010010},
     {"stor m(,28:39)", 0b00010011},
-    {"exit", 0b11111111}
-};
+    {"exit", 0b11111111}};
+
 // função para converter a operação para sua representação decimal
 void convert_to_decimal(char *line)
 {
@@ -304,6 +304,13 @@ void get_op_cycles(int *cycles, const char *input_file)
 
     // Lê e processa as linhas do arquivo de entrada
     fgets(line, 50, file);
+
+    // Config de clock não encontrada
+    if (strstr(line, "/*") == NULL)
+    {
+        return;
+    }
+
     while (fgets(line, 50, file) && !(strstr(line, "*/")))
     {
         separate_line(line, operation, &number);
