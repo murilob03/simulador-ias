@@ -106,7 +106,7 @@ void UC(IAS_REGS *banco, control_signals *signal, pipeline_regs p_rgs, int *n_cy
         escreve_resultado(banco, p_rgs.ex_wb, memory);
 
         // Encaminhamento
-        if (p_rgs.ex_wb->mem_addr != -1)
+        if (p_rgs.ex_wb->mem_addr != 255)
         {
             // se a próxima instrução for de leitura e o endereço de memória for o mesmo
             // da instrução atual, encaminha o valor diretamente para a execução
@@ -143,7 +143,7 @@ void ULA(int use_mbr, int op, IAS_REGS *banco)
         break;
     case 2:
         // multiplicação
-        banco->AC *= banco->MBR;
+        banco->MQ = banco->MQ * banco->MBR;
         break;
     case 3:
         // divisão
@@ -226,7 +226,7 @@ void decodifica(IAS_REGS *banco, IF_ID *if_id, ID_OF *id_of, control_signals *si
         if (signal->left_necessary)
         {
             banco->IBR = banco->MBR;
-            banco->IR = banco->MBR >> 32;
+            banco->IR = (banco->MBR >> 32) & 0xFF;
             banco->MAR = (banco->MBR >> 20) & 0xFFF;
         }
         else
@@ -291,7 +291,7 @@ void executa_operacao(IAS_REGS *banco, OF_EX *of_ex, EX_WB *ex_wb, control_signa
     // execução
 
     // verifica operação de parada
-    if (of_ex->opcode == -1)
+    if (of_ex->opcode == 255)
     {
         signal->halt = 1;
         return;

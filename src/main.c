@@ -66,7 +66,7 @@ int main(int argc, char const *argv[])
     strcat(output_filename, ".out");
     FILE *output = fopen(output_filename, "w");
 
-    for (int j = 0; j <= i; j++)
+    for (int j = 0; j <= i + 1; j++)
     {
         memory_read(j, &value, memory);
         printf("%d: %" PRId64 "\n", j, value);
