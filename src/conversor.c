@@ -179,10 +179,13 @@ int is_operation(char *line)
 }
 
 // função para adicionar uma nova linha ao final de um arquivo
-void adiciona_quebra_linha(const char *filename) {
-    FILE *file = fopen(filename, "a");
+void add_new_line(const char *filename)
+{
+    FILE *file = fopen(filename, "a+");
+    char line[MAX_LINE_LENGTH];
 
-    if (file == NULL) {
+    if (file == NULL)
+    {
         printf("Erro ao abrir arquivo de entrada!\n");
         return;
     }
@@ -190,22 +193,23 @@ void adiciona_quebra_linha(const char *filename) {
     // Move o cursor para o final do arquivo
     fseek(file, -1, SEEK_END);
 
-    // Verifica se o último caractere é uma quebra de linha
-    if (ftell(file) > 0) {
-        char lastChar = fgetc(file);
-        if (lastChar != '\n') {
-            // Se não for, adiciona uma quebra de linha
-            fprintf(file, "\n");
-        }
+    // Lê o último caractere do arquivo
+    char ch = fgetc(file);
+
+    // Se o último caractere do arquivo não for uma quebra de linha, adiciona uma quebra de linha
+    if (ch != '\n')
+    {
+        fprintf(file, "\n");
     }
 
+    // Close the file
     fclose(file);
 }
 
 void write_memory(void *memory, const char *input_file)
 {
     // Adiciona uma quebra de linha ao final do arquivo
-    adiciona_quebra_linha(input_file);
+    add_new_line(input_file);
 
     FILE *file;
     char line[MAX_LINE_LENGTH];

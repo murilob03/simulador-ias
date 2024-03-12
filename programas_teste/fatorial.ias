@@ -1,3 +1,11 @@
+/*
+load: 3
+mulm: 4
+stor: 5
+jump+m: 20
+loadmm: 6
+*/
+// PC = 3
 // valor de n
 5
 0

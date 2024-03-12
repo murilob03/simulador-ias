@@ -482,6 +482,7 @@ void processador(int pc, void *memory, int *n_cycles)
     signal.stall = 0;
     signal.restart_pipeline = 1;
     signal.raw = 0;
+    signal.halt = 0;
 
     // Inicializa os registradores do pipeline
     pipeline_regs p_rgs;
