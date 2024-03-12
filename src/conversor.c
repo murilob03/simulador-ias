@@ -178,8 +178,35 @@ int is_operation(char *line)
     return 1;
 }
 
+// função para adicionar uma nova linha ao final de um arquivo
+void adiciona_quebra_linha(const char *filename) {
+    FILE *file = fopen(filename, "a");
+
+    if (file == NULL) {
+        printf("Erro ao abrir arquivo de entrada!\n");
+        return;
+    }
+
+    // Move o cursor para o final do arquivo
+    fseek(file, -1, SEEK_END);
+
+    // Verifica se o último caractere é uma quebra de linha
+    if (ftell(file) > 0) {
+        char lastChar = fgetc(file);
+        if (lastChar != '\n') {
+            // Se não for, adiciona uma quebra de linha
+            fprintf(file, "\n");
+        }
+    }
+
+    fclose(file);
+}
+
 void write_memory(void *memory, const char *input_file)
 {
+    // Adiciona uma quebra de linha ao final do arquivo
+    adiciona_quebra_linha(input_file);
+
     FILE *file;
     char line[MAX_LINE_LENGTH];
     char last_op[MAX_LINE_LENGTH];
@@ -189,7 +216,7 @@ void write_memory(void *memory, const char *input_file)
     // Abre o arquivo de entrada para leitura
     if ((file = fopen(input_file, "r")) == NULL)
     {
-        perror("Erro ao abrir arquivo de entrada");
+        perror("Erro ao abrir arquivo de entrada!\n");
         exit(EXIT_FAILURE);
     }
 
