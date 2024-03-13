@@ -171,7 +171,7 @@ u_int64_t join_ops(char *line1, char *line2)
 
 int is_operation(char *line)
 {
-    if (isdigit((unsigned char)line[0]))
+    if (isdigit((unsigned char)line[0]) || line[0] == '-')
     {
         return 0;
     }

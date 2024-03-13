@@ -166,11 +166,11 @@ void ULA(int use_mbr, int op, IAS_REGS *banco)
         break;
     case 6:
         // deslocamento direita
-        banco->AC >>= banco->AC;
+        banco->AC >>= 1;
         break;
     case 7:
         // deslocamento esquerda
-        banco->AC <<= banco->AC;
+        banco->AC <<= 1;
         break;
     default:
         break;

@@ -1,0 +1,74 @@
+// PC = 25
+// vetor com 20 elementos ordenados
+8
+11
+14
+20
+27
+29
+33
+36
+41
+47
+53
+59
+64
+69
+71
+75
+78
+82
+86
+95
+// valor sendo buscado, após a execução se torna
+// o indíce de onde o valor foi encontrado.
+// caso não seja encontrado, será -1
+69
+// vars aux
+0
+19
+0
+1
+// (low + high) / 2
+load m(21)
+add m(22)
+rsh
+stor m(23)
+stor m(27,28:39)
+load m(1000)
+// a[mid] - x
+sub m(20)
+stor m(43)
+load -|m(43)|
+// a[mid] == x?
+jump +m(38,20:39)
+load m(43)
+// x < a[mid]?
+jump +m(34,20:39)
+// caso x > a[mid]
+load m(23)
+add m(24)
+stor m(21)
+sub m(22)
+sub m(24)
+jump +m(40,0:19)
+jump m(25,0:19)
+// caso x < a[mid]
+load m(23)
+sub m(24)
+stor m(22)
+load m(21)
+sub m(22)
+sub m(24)
+jump +m(40,0:19)
+jump m(25,0:19)
+// encontrou
+load m(23)
+stor m(20)
+exit
+// nao encontrou
+load m(24)
+sub m(24)
+sub m(24)
+stor m(20)
+exit

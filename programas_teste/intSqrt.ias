@@ -1,0 +1,54 @@
+// PC = 6
+// resp na linha 1
+102356
+-1
+1
+0
+0
+1
+// inicia high como n / 2
+load m(0)
+rsh
+stor m(3)
+// calcula o meio
+load m(2)
+add m(3)
+rsh
+stor m(4)
+// calcula meio^2
+load mq,m(4)
+mul m(4)
+load mq
+sub m(0)
+stor m(25)
+load -|m(25)|
+// verifica se meio^2 == n
+jump +m(21,20:39)
+load m(25)
+// verifica se meio^2 é maior ou menor que n
+jump +m(17,20:39)
+// se menor, low = meio + 1
+load m(4)
+add m(5)
+stor m(2)
+sub m(3)
+sub m(5)
+jump +m(23,0:19)
+jump m(7,20:39)
+// se maior, high = meio - 1
+load m(4)
+sub m(5)
+stor m(3)
+load m(2)
+sub m(3)
+sub m(5)
+jump +m(23,0:19)
+jump m(7,20:39)
+// caso meio^2 == n, coloca n em m(1) e encerra
+load m(4)
+stor m(1)
+exit
+// caso low fique maior que high, a resposta é high
+load m(3)
+stor m(1)
+exit
