@@ -1,0 +1,236 @@
+// PC = 6
+// obs: as entradas e a saída estão na parte final do programa
+// valor n da matriz n x n (pode-se mudar esse valor, contanto
+// que as matrizes de entrada sejam alteradas de acordo)
+5
+// variáveis de controle
+1
+100
+0
+0
+0
+// inicio do loop i
+load m(3)
+sub m(0)
+load mq,m(0)
+jump +m(43,0:19)
+// inicio do loop j
+load m(4)
+sub m(0)
+load mq,m(0)
+jump +m(41,0:19)
+// encontra o índice de c[0][0]
+load mq,m(0)
+mul m(0)
+load mq
+lsh
+add m(2)
+stor m(44)
+load mq,m(0)
+mul m(3)
+// encontra o índice de c[i][j] e armazena
+load mq
+add m(44)
+add m(4)
+stor m(45)
+stor m(17,28:39)
+// inicia c[i][j] com 0
+load m(0)
+sub m(0)
+stor m(1000)
+// inicio do loop k
+load m(5)
+sub m(0)
+load mq,m(0)
+jump +m(39,0:19)
+// recupera e armazena o conteúdo de c[i][j]
+load m(45)
+stor m(21,8:19)
+load m(1000)
+stor m(46)
+// recupera e armazena o conteúdo de a[i][k]
+load mq,m(0)
+mul m(3)
+load mq
+add m(2)
+add m(5)
+stor m(25,8:19)
+load m(1000)
+stor m(47)
+// calcula e armazena o índice de b[0][0]
+load mq,m(0)
+mul m(0)
+load mq
+add m(2)
+stor m(48)
+// recupera e armazena o conteúdo de b[k][j]
+load mq,m(0)
+mul m(5)
+load mq
+add m(48)
+add m(4)
+stor m(31,28:39)
+load m(1000)
+stor m(49)
+// calcula e atualiza segundo a expressão
+// c[i][j] = c[i][j] + a[i][k] * b[k][j]
+load mq,m(47)
+mul m(49)
+load mq
+add m(46)
+stor m(50)
+load m(45)
+stor m(36,28:39)
+load m(50)
+stor m(1000)
+// k++ e retorna para o inicio do loop
+load m(5)
+add m(1)
+stor m(5)
+jump m(18,0:19)
+// j++ e retorna para o inicio do loop
+load m(4)
+add m(1)
+stor m(4)
+jump m(51,0:19)
+// i++ e retorna para o inicio do loop
+load m(3)
+add m(1)
+stor m(3)
+jump m(53,0:19)
+// fim do programa
+exit
+0
+0
+0
+0
+0
+0
+0
+/*
+ obs esse "puxadinho" foi feito pq esqueci de resetar os contadores
+ entao para não alterar os endereços resolvi resetá-los aqui embaixo
+ reseta o contador k
+*/
+load m(0)
+sub m(0)
+stor m(5)
+jump m(8,0:19)
+// reseta o contador j
+load m(0)
+sub m(0)
+stor m(4)
+jump m(6,0:19)
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+/*
+a partir daqui, matrizes de entrada no formato:
+a[0][0]
+a[0][1]
+a[0][2]
+a[1][0]
+a[1][1]
+[...]
+a[n][n]
+b[0][0]
+b[0][1]
+b[0][2]
+b[1][0]
+b[1][1]
+[...]
+b[n][n]
+logo após as entradas vem a matriz de saída c no mesmo formato
+*/
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+25
+24
+23
+22
+21
+20
+19
+18
+17
+16
+15
+14
+13
+12
+11
+10
+9
+8
+7
+6
+5
+4
+3
+2
+1

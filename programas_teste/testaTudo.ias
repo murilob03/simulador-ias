@@ -1,0 +1,86 @@
+// Este programa simula todas as operações possíveis. Se as saídas produzidas forem
+// idênticas às saídas esperadas, conforme descrito nos comentários, e o programa
+// terminar com sucesso (sem ficar preso ou retornar erro), fica comprovado que o
+// simulador está funcionando corretamente.
+-1324
+3
+load m(0)
+// esperado em m(20): -1324
+stor m(20)
+load -m(0)
+// esperado em m(21): 1324
+stor m(21)
+load |m(0)|
+// esperado em m(22): 1324
+stor m(22)
+load -|m(0)|
+// esperado em m(23): -1324
+stor m(23)
+add m(0)
+// esperado em m(24): -2648
+stor m(24)
+sub m(0)
+// esperado em m(25): -1324
+stor m(25)
+add |m(0)|
+// esperado em m(26): 0
+stor m(26)
+sub |m(0)|
+// esperado em m(27): -1324
+stor m(27)
+load mq,m(0)
+mul m(1)
+load mq
+// esperado em m(28): -3972
+stor m(28)
+div m(1)
+load mq
+// esperado em m(29): -1324
+stor m(29)
+rsh
+// esperado em m(20): -662
+stor m(30)
+lsh
+// esperado em m(20): -1324
+stor m(31)
+load m(1)
+jump m(17,0:19)
+jump m(17,20:39)
+jump +m(16,20:39)
+jump +m(18,0:19)
+load m(0)
+jump +m(16,20:39)
+jump +m(18,0:19)
+jump m(37,0:19)
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+load m(1)
+lsh
+lsh
+lsh
+add m(1)
+add m(1)
+add m(1)
+stor m(42,8:19)
+add m(1)
+stor m(42,28:39)
+// esperado em m(33): 36
+// esperado em m(36): 36
+stor m(1000)
+stor m(1000)
+exit

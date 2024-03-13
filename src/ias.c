@@ -510,7 +510,7 @@ void processador(int pc, void *memory, int *n_cycles)
     while (1)
     {
         // Executa um ciclo do pipeline
-        step_pipeline_reverse(memory, &banco, &signal, &p_rgs, n_cycles);
+         step_pipeline_reverse(memory, &banco, &signal, &p_rgs, n_cycles);
 
         if (signal.halt)
             break;
