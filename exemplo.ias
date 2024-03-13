@@ -1,0 +1,42 @@
+/*
+load-m: 4
+addm: 2
+load: 6
+load|m: 2
+load-|m: 7
+loadmm: 3
+loadm: 1
+sub|m: 4
+add|m: 5
+subm: 3
+mulm: 4
+divm: 10
+jumpm: 4
+jump+m: 5
+lsh: 3
+rsh: 2
+stor: 5
+storm: 8
+*/
+load m(x)
+load -m(x)
+load |m(x)|
+load -|m(x)|
+add m(x)
+sub m(x)
+add |m(x)|
+sub |m(x)|
+load mq,m(x)
+load mq
+mul m(x)
+div m(x)
+jump m(x,0:19)
+jump m(x,20:39)
+jump +m(x,0:19)
+jump +m(x,20:39)
+stor m(x,8:19)
+stor m(x,28:39)
+lsh
+rsh
+stor m(x)
+exit

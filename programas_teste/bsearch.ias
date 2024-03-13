@@ -20,10 +20,10 @@
 82
 86
 95
-// valor sendo buscado, após a execução se torna
-// o indíce de onde o valor foi encontrado.
-// caso não seja encontrado, será -1
-69
+// Entrada do valor sendo buscado e saída do programa. Após a execução 
+// se torna o indíce de onde o valor foi encontrado. Caso não seja encontrado, 
+//será -1. Portanto, após a execução, procurar o resultado na linha 20.
+86
 // vars aux
 0
 19

@@ -6,8 +6,9 @@ jump+m: 20
 loadmm: 6
 */
 // PC = 3
-// valor de n
-5
+// valor de n para calcular o fatorial
+7
+// resultado na linha 1
 0
 1
 // copia n para m(1)
